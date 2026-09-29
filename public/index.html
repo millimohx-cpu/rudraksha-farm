@@ -94,12 +94,10 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
    <p class="body">Three sizes. One traditional process. Select a jar for everyday cooking, family use or stocking the pantry.</p>
   </div>
   <div class="products">
-   <article class="product"><div class="product-photo"><img src="product-500.jpg" alt="500 ml Rudraksha ghee"></div><div class="product-body"><div class="number">01 / 500 ML</div><h3>A2 Bilona Desi Cow Ghee</h3><p>Traditional hand-churned ghee from our farm's process.</p><div class="product-bottom"><div class="price">₹999</div><button class="add" onclick="add('500 ML A2 Bilona Ghee',999,'product-500.jpg',`ghee-500')``>Add to cart</button></div></div></article>
-   <article class="product"><div class="product-photo"><img src="product-lifestyle.jpg" alt="1 kg Rudraksha ghee"></div><div class="product-body"><div class="number">02 / 1 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>The everyday family jar, crafted with the same traditional method.</p><div class="product-bottom"><div class="price">₹1,999</div><button class="add" onclick="add('1 KG A2 Bilona Ghee',1999,'product-lifestyle.jpg',`ghee-1000`)">Add to cart</button></div></div></article>
-   <article class="product"><div class="product-photo"><img src="product-story.jpg" alt="2.5 kg Rudraksha ghee"></div><div class="product-body"><div class="number">03 / 2.5 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>A larger pantry jar for households that choose ghee regularly.</p><div class="product-bottom"><div class="price">₹4,999</div><button class="add" onclick="add('2.5 KG A2 Bilona Ghee',4999,'product-story.jpg',`ghee-2500`)">Add to cart</button></div></div></article>
+  <article class="product"><div class="product-photo"><img src="product-500.jpg" alt="500 ml Rudraksha ghee"></div><div class="product-body"><div class="number">01 / 500 ML</div><h3>A2 Bilona Desi Cow Ghee</h3><p>Traditional hand-churned ghee from our farm's process.</p><div class="product-bottom"><div class="price">₹999</div><button class="add" onclick="add('500 ML A2 Bilona Ghee',999,'product-500.jpg','ghee-500')">Add to cart</button></div></div></article>
+  <article class="product"><div class="product-photo"><img src="product-lifestyle.jpg" alt="1 kg Rudraksha ghee"></div><div class="product-body"><div class="number">02 / 1 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>The everyday family jar, crafted with the same traditional method.</p><div class="product-bottom"><div class="price">₹1,999</div><button class="add" onclick="add('1 KG A2 Bilona Ghee',1999,'product-lifestyle.jpg','ghee-1000')">Add to cart</button></div></div></article>
+  <article class="product"><div class="product-photo"><img src="product-story.jpg" alt="2.5 kg Rudraksha ghee"></div><div class="product-body"><div class="number">03 / 2.5 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>A larger pantry jar for households that choose ghee regularly.</p><div class="product-bottom"><div class="price">₹4,999</div><button class="add" onclick="add('2.5 KG A2 Bilona Ghee',4999,'product-story.jpg','ghee-2500')">Add to cart</button></div></div></article>
   </div>
- </div>
-</section>
 
 <section class="process" id="process">
  <div class="container processgrid">
@@ -236,7 +234,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
  <script>
 let cart=[];
 const money=n=>"₹"+n.toLocaleString("en-IN");
-function add(name,price,img, producId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,qty:1});render();document.getElementById("cart").classList.add("show")}
+function add(name,price,img,productId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,productId,qty:1});render();document.getElementById("cart").classList.add("show")}
 function render(){let box=document.getElementById("items");if(!cart.length){box.innerHTML='<p style="color:#887a69;font-size:13px">Your cart is empty.</p>';document.getElementById("total").textContent="₹0";return}box.innerHTML=cart.map((x,i)=>`<div class="cartitem"><img src="${x.img}"><div style="flex:1"><b>${x.name}</b><div style="font-size:12px;color:#887a69">${money(x.price)}</div><div style="margin-top:8px"><button onclick="qty(${i},-1)">−</button> ${x.qty} <button onclick="qty(${i},1)">+</button></div></div></div>`).join("");document.getElementById("total").textContent=money(cart.reduce((s,x)=>s+x.price*x.qty,0))}
 function qty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);render()}
 function closeCart(){document.getElementById("cart").classList.remove("show")}
