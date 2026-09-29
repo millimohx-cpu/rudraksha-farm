@@ -236,9 +236,84 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
  <script>
 let cart=[];
 const money=n=>"₹"+n.toLocaleString("en-IN");
-function add(name,price,img){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,qty:1});render();document.getElementById("cart").classList.add("show")}
+function add(name,price,img, producId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,qty:1});render();document.getElementById("cart").classList.add("show")}
 function render(){let box=document.getElementById("items");if(!cart.length){box.innerHTML='<p style="color:#887a69;font-size:13px">Your cart is empty.</p>';document.getElementById("total").textContent="₹0";return}box.innerHTML=cart.map((x,i)=>`<div class="cartitem"><img src="${x.img}"><div style="flex:1"><b>${x.name}</b><div style="font-size:12px;color:#887a69">${money(x.price)}</div><div style="margin-top:8px"><button onclick="qty(${i},-1)">−</button> ${x.qty} <button onclick="qty(${i},1)">+</button></div></div></div>`).join("");document.getElementById("total").textContent=money(cart.reduce((s,x)=>s+x.price*x.qty,0))}
 function qty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);render()}
 function closeCart(){document.getElementById("cart").classList.remove("show")}
-</script>
-</body></html>
+function openCheckout(){
+  if(!cart.length){
+    alert("Your cart is empty.");
+    return;
+  }
+  document.getElementById("cart").classList.remove("show");
+  document.getElementById("checkout").classList.add("show");
+}
+
+function closeCheckout(){
+  document.getElementById("checkout").classList.remove("show");
+}
+
+async function submitOrder(e){
+  e.preventDefault();
+
+  if(!cart.length){
+    alert("Your cart is empty.");
+    return;
+  }
+
+  const payButton=document.getElementById("payButton");
+  const message=document.getElementById("checkoutMessage");
+
+  const name=document.getElementById("customerName").value.trim();
+  const phone=document.getElementById("customerPhone").value.trim();
+  const email=document.getElementById("customerEmail").value.trim();
+  const address=document.getElementById("customerAddress").value.trim();
+
+  payButton.disabled=true;
+  payButton.textContent="CREATING SECURE PAYMENT...";
+  message.textContent="Please wait...";
+
+  try{
+    const res=await fetch("/api/payments/cashfree/order",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        customer:{
+          name:name,
+          phone:phone,
+          email:email,
+          address:address
+        },
+        items:cart.map(x=>({
+          productId:x.productId,
+          quantity:x.qty
+        }))
+      })
+    });
+
+    const out=await res.json();
+
+    if(!res.ok){
+      throw new Error(out.error||"Unable to create payment");
+    }
+
+    const cashfree=Cashfree({
+      mode:out.environment
+    });
+
+    cashfree.checkout({
+      paymentSessionId:out.paymentSessionId,
+      redirectTarget:"_self"
+    });
+
+  }catch(err){
+    console.error(err);
+    message.textContent=err.message||"Payment could not be started.";
+    payButton.disabled=false;
+    payButton.textContent="PAY SECURELY WITH CASHFREE";
+  }
+}
+ </script>
+   
