@@ -315,5 +315,53 @@ async function submitOrder(e){
     payButton.textContent="PAY SECURELY WITH CASHFREE";
   }
 }
+ async function handleCashfreeReturn(){
+  const params=new URLSearchParams(window.location.search);
+
+  if(params.get("cashfree_return")!=="1"){
+    return;
+  }
+
+  const orderId=params.get("order_id");
+
+  if(!orderId){
+    return;
+  }
+
+  const message=document.getElementById("checkoutMessage");
+
+  try{
+    message.textContent="Verifying your payment...";
+
+    const res=await fetch(
+      "/api/payments/cashfree/status/"+encodeURIComponent(orderId)
+    );
+
+    const out=await res.json();
+
+    if(!res.ok){
+      throw new Error(out.error||"Unable to verify payment");
+    }
+
+    if(out.paymentStatus==="paid"){
+      alert("Payment successful! Your order has been confirmed.");
+      cart=[];
+      render();
+      window.history.replaceState({},document.title,"/");
+    }else if(out.paymentStatus==="pending"){
+      alert("Payment is still being verified. Please wait a moment.");
+      window.history.replaceState({},document.title,"/");
+    }else{
+      alert("Payment was not successful.");
+      window.history.replaceState({},document.title,"/");
+    }
+
+  }catch(err){
+    console.error(err);
+    alert("Payment verification failed. Please contact Rudraksha Farm.");
+  }
+}
+
+handleCashfreeReturn();
  </script>
    
