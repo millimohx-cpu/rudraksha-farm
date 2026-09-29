@@ -167,8 +167,73 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 </div></footer>
 
 <a class="wa" href="https://wa.me/917296820070" target="_blank">WhatsApp · 7296820070</a>
-<div class="cart" id="cart" onclick="if(event.target===this)closeCart()"><aside class="drawer"><div class="drawerhead"><h2>Your Cart</h2><button class="x" onclick="closeCart()">×</button></div><div id="items"></div><div class="carttotal"><span>Total</span><span id="total">₹0</span></div><a class="btn gold" style="width:100%" href="https://wa.me/917296820070" target="_blank">ORDER VIA WHATSAPP</a></aside></div>
-<script>
+<div class="cart" id="cart" onclick="if(event.target===this)closeCart()">
+  <aside class="drawer">
+    <div class="drawerhead">
+      <h2>Your Cart</h2>
+      <button class="x" onclick="closeCart()">×</button>
+    </div>
+
+    <div id="items"></div>
+
+    <div class="carttotal">
+      <span>Total</span>
+      <span id="total">₹0</span>
+    </div>
+
+    <button class="btn gold" style="width:100%" onclick="openCheckout()">
+      CONTINUE TO CHECKOUT
+    </button>
+  </aside>
+</div>
+
+<div class="cart" id="checkout" onclick="if(event.target===this)closeCheckout()">
+  <aside class="drawer">
+    <div class="drawerhead">
+      <h2>Checkout</h2>
+      <button class="x" onclick="closeCheckout()">×</button>
+    </div>
+
+    <form id="checkoutForm" onsubmit="submitOrder(event)">
+
+      <label>Full Name</label>
+      <input id="customerName" required
+        style="width:100%;padding:13px;margin:7px 0 15px"
+        placeholder="Your full name">
+
+      <label>Phone Number</label>
+      <input id="customerPhone" required
+        type="tel"
+        pattern="[0-9]{10}"
+        style="width:100%;padding:13px;margin:7px 0 15px"
+        placeholder="10 digit mobile number">
+
+      <label>Email</label>
+      <input id="customerEmail"
+        type="email"
+        style="width:100%;padding:13px;margin:7px 0 15px"
+        placeholder="Email address">
+
+      <label>Address</label>
+      <textarea id="customerAddress" required
+        style="width:100%;padding:13px;margin:7px 0 15px;min-height:90px"
+        placeholder="Complete delivery address"></textarea>
+
+      <button id="payButton"
+        class="btn gold"
+        type="submit"
+        style="width:100%">
+        PAY SECURELY WITH CASHFREE
+      </button>
+
+      <p id="checkoutMessage"
+        style="font-size:12px;color:#887a69;text-align:center;margin-top:12px">
+      </p>
+
+    </form>
+  </aside>
+</div>
+ <script>
 let cart=[];
 const money=n=>"₹"+n.toLocaleString("en-IN");
 function add(name,price,img){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,qty:1});render();document.getElementById("cart").classList.add("show")}
