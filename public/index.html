@@ -49,17 +49,46 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 @media(max-width:600px){
  .top{font-size:8px}.nav{top:32px}.navin{height:70px}.brand img{width:43px;height:43px}.brand b{font-size:16px}.hero,.hero img{min-height:760px;height:760px}.hero-copy{top:52%;transform:translateY(-50%)}.hero h1{font-size:82px}.hero-sub{font-size:22px}.hero-stamp{display:none}.actions{flex-direction:column;align-items:flex-start}.btn{width:100%}.intro,.product-section,.process,.farm,.founders,.texture,.credentials,.final{padding:82px 0}.bigtitle{font-size:58px}.processphoto{height:430px}.farmphoto{height:450px}.quote{font-size:38px}.founder{border-right:0;border-bottom:1px solid rgba(255,255,255,.17)}.foot{grid-template-columns:1fr}.copyright{display:block}.copyright span{display:block;margin-top:8px}
 }
+
+.menu-btn{display:none;background:transparent;border:1px solid rgba(255,255,255,.45);color:#fffaf1;padding:9px 11px;letter-spacing:.12em;font-size:10px;text-transform:uppercase;cursor:pointer}
+.menu-btn span{margin-left:5px}
+.menu-overlay{position:fixed;inset:0;z-index:90;background:rgba(15,10,6,.72);display:none}
+.menu-overlay.show{display:block}
+.menu-drawer{position:absolute;left:0;top:0;height:100%;width:min(390px,88vw);background:var(--cream);color:var(--ink);padding:34px 28px;box-shadow:20px 0 50px rgba(0,0,0,.25)}
+.menu-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:45px}
+.menu-head b{font:500 38px "Cormorant Garamond",serif}
+.menu-close{border:1px solid rgba(0,0,0,.15);background:none;width:38px;height:38px;border-radius:50%;cursor:pointer}
+.menu-list{display:flex;flex-direction:column}
+.menu-list a{padding:17px 0;border-bottom:1px solid rgba(91,59,34,.16);font:500 28px "Cormorant Garamond",serif}
+.menu-list small{display:block;font:600 9px "DM Sans",sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+@media(max-width:900px){.menu-btn{display:inline-flex;align-items:center;justify-content:center}.navlinks{display:none}}
 </style>
 </head>
 <body>
 <div class="top">RUDRAKSHA FARM · BARmer, RAJASTHAN · THE SOUL OF TRADITION</div>
 <header class="nav">
  <div class="container navin">
+  <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()">☰ <span>MENU</span></button>
   <div class="navlinks"><a href="#story">Story</a><a href="#process">Bilona</a><a href="#shop">Shop</a></div>
   <a href="#home" class="brand"><img src="logo.jpg" alt="Rudraksha"><b>RUDRAKSHA</b><span>THE SOUL OF TRADITION</span></a>
-  <div class="navlinks right"><a href="#founders">Founders</a><a href="#credentials">Trust</a><a href="#shop">Order</a></div>
+  <div class="navlinks right"><a href="our-farm.html">Our Farm</a><a href="#credentials">Trust</a><a href="#shop">Order</a></div>
  </div>
 </header>
+
+
+<div class="menu-overlay" id="menuOverlay" onclick="if(event.target===this)closeMenu()">
+ <aside class="menu-drawer">
+  <div class="menu-head"><b>RUDRAKSHA</b><button class="menu-close" onclick="closeMenu()">×</button></div>
+  <nav class="menu-list">
+   <a href="index.html#home" onclick="closeMenu()"><small>01 / Home</small>Home</a>
+   <a href="index.html#story" onclick="closeMenu()"><small>02 / Story</small>Our Story</a>
+   <a href="our-farm.html"><small>03 / The Farm</small>Our Farm</a>
+   <a href="index.html#process" onclick="closeMenu()"><small>04 / Tradition</small>Bilona Method</a>
+   <a href="index.html#shop" onclick="closeMenu()"><small>05 / Collection</small>Shop Ghee</a>
+   <a href="index.html#founders" onclick="closeMenu()"><small>06 / People</small>Founders</a>
+  </nav>
+ </aside>
+</div>
 
 <section class="hero" id="home">
  <img src="hero.jpg" alt="Rudraksha Farm ghee">
@@ -232,6 +261,8 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   </aside>
 </div>
  <script>
+function openMenu(){document.getElementById("menuOverlay").classList.add("show");document.body.style.overflow="hidden"}
+function closeMenu(){document.getElementById("menuOverlay").classList.remove("show");document.body.style.overflow=""}
 let cart=[];
 const money=n=>"₹"+n.toLocaleString("en-IN");
 function add(name,price,img,productId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,productId,qty:1});render();document.getElementById("cart").classList.add("show")}
