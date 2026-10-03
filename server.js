@@ -74,6 +74,14 @@ async function initDb(){
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS password_hash TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(10,2) NOT NULL DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS admin_audit_logs(
+      id BIGSERIAL PRIMARY KEY,
+      admin_action TEXT NOT NULL,
+      order_id TEXT,
+      details JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_logs(created_at DESC);
     CREATE TABLE IF NOT EXISTS order_notifications(
       id BIGSERIAL PRIMARY KEY,
       order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -243,6 +251,14 @@ function allowPaymentCreate(key){
   if(paymentAttempts.size>5000){for(const [k,v] of paymentAttempts)if(now-v.at>60*1000)paymentAttempts.delete(k)}
   return x.count<=10;
 }
+const apiRateLimit=new Map();
+function allowApiRequest(req){
+  const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();
+  const now=Date.now(),bucket=Math.floor(now/60000),key=ip+"|"+bucket;
+  const n=(apiRateLimit.get(key)||0)+1; apiRateLimit.set(key,n);
+  if(apiRateLimit.size>5000){for(const [k]=apiRateLimit)if(!k.endsWith("|"+bucket))apiRateLimit.delete(k)}
+  return n<=180;
+}
 const loginAttempts=new Map();
 function allowCustomerLogin(key){
   const now=Date.now(),x=loginAttempts.get(key)||{count:0,at:now};
@@ -256,10 +272,11 @@ async function customerAuth(req){const h=req.headers.authorization||'';if(!h.sta
 async function api(req,res){
   const u=new URL(req.url,`http://${req.headers.host}`),p=u.pathname;
   try{
+    if(p!=='/api/health'&&!allowApiRequest(req))return json(res,429,{error:'Too many requests. Please try again shortly.'});
     if(req.method==='GET'&&p==='/api/health'){
       try{
         await pool.query('SELECT 1');
-        return json(res,200,{ok:true,service:'rudraksha-farm',database:true,time:new Date().toISOString()});
+        return json(res,200,{ok:true,service:'rudraksha-farm',database:true,time:new Date().toISOString(),uptimeSeconds:Math.floor(process.uptime()),dbPool:{total:pool.totalCount,idle:pool.idleCount,waiting:pool.waitingCount}});
       }catch(e){
         console.error('Health check database error:',e.message);
         return json(res,503,{ok:false,service:'rudraksha-farm',database:false,time:new Date().toISOString()});
@@ -433,6 +450,32 @@ async function api(req,res){
       const r=await pool.query('SELECT * FROM orders ORDER BY created_at ASC');
       return json(res,200,{orders:r.rows.map(rowOrder)});
     }
+    if(req.method==='GET'&&p==='/api/admin/orders/audit'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const r=await pool.query('SELECT id,admin_action,order_id,details,created_at FROM admin_audit_logs ORDER BY created_at DESC LIMIT 100');
+      return json(res,200,{audit:r.rows.map(x=>({id:x.id,action:x.admin_action,orderId:x.order_id,details:x.details,createdAt:new Date(x.created_at).toISOString()}))});
+    }
+    if(req.method==='PATCH'&&p==='/api/admin/orders/bulk'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const b=await body(req),ids=[...new Set((b.orderIds||[]).map(String).filter(Boolean))],status=String(b.status||'');
+      const allowed=['received','payment_confirmed','processing','delivered','cancelled'];
+      if(!ids.length||!allowed.includes(status))return json(res,400,{error:'Valid order IDs and bulk-safe status are required.'});
+      const client=await pool.connect();
+      try{
+        await client.query('BEGIN');
+        let updated=0;
+        for(const id of ids){
+          const r=await client.query('SELECT status FROM orders WHERE id=$1 FOR UPDATE',[id]);
+          if(!r.rowCount)continue;
+          await client.query('UPDATE orders SET status=$1 WHERE id=$2',[status,id]);
+          await client.query('INSERT INTO admin_audit_logs(admin_action,order_id,details) VALUES($1,$2,$3::jsonb)',['bulk_order_status_change',id,JSON.stringify({from:r.rows[0].status,to:status})]);
+          await client.query('INSERT INTO order_notifications(order_id,event) SELECT $1,$2 WHERE NOT EXISTS (SELECT 1 FROM order_notifications WHERE order_id=$1 AND event=$2)',[id,status]);
+          orderStatusCache.delete(id); updated++;
+        }
+        await client.query('COMMIT');
+        return json(res,200,{updated,status});
+      }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+    }
     if(req.method==='GET'&&p==='/api/admin/orders/export'){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
       const status=String(u.searchParams.get('status')||'').trim();
@@ -465,6 +508,7 @@ async function api(req,res){
       const allowed=['received','payment_confirmed','processing','dispatched','delivered','cancelled'];
       if(b.status&&!allowed.includes(b.status))return json(res,400,{error:'Invalid status'});
       if(b.status){
+        await pool.query('INSERT INTO admin_audit_logs(admin_action,order_id,details) VALUES($1,$2,$3::jsonb)',['order_status_change',id,JSON.stringify({from:o.status,to:b.status})]);
         if(b.status==='dispatched'){
           const courier=String(b.courier!==undefined?b.courier:(o.courier||'')).trim();
           const tracking=String(b.trackingNumber!==undefined?b.trackingNumber:(o.tracking_number||'')).trim();
@@ -512,6 +556,15 @@ async function api(req,res){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
       const db=await pool.query("SELECT NOW() AS time, (SELECT COUNT(*) FROM orders)::int AS orders, (SELECT COUNT(*) FROM products)::int AS products");
       return json(res,200,{ok:true,database:true,serverTime:new Date().toISOString(),orders:db.rows[0].orders,products:db.rows[0].products,backupAutomationAvailable:false,backupNote:'Use Render database backup/restore controls for managed backups.'});
+    }
+    if(req.method==='GET'&&p==='/api/admin/customers/export'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const r=await pool.query("SELECT customer->>'name' AS name,customer->>'phone' AS phone,customer->>'email' AS email,COUNT(*)::int AS orders,COUNT(*) FILTER (WHERE payment_status='paid')::int AS paid_orders,COALESCE(SUM(total) FILTER (WHERE payment_status='paid'),0)::numeric AS paid_value,MAX(created_at) AS last_order FROM orders GROUP BY customer->>'name',customer->>'phone',customer->>'email' ORDER BY last_order DESC");
+      const escCsv=v=>{let x=String(v??'');if(/[",\n\r]/.test(x))x='"'+x.replace(/"/g,'""')+'"';return x};
+      const h=['Name','Phone','Email','Orders','Paid Orders','Paid Value','Last Order'];
+      const rows=r.rows.map(x=>[x.name,x.phone,x.email,x.orders,x.paid_orders,x.paid_value,x.last_order?new Date(x.last_order).toISOString():''].map(escCsv).join(','));
+      res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="rudraksha-customers-'+new Date().toISOString().slice(0,10)+'.csv"','Cache-Control':'no-store'});
+      return res.end('\uFEFF'+h.map(escCsv).join(',')+'\n'+rows.join('\n')+'\n');
     }
     if(req.method==='GET'&&p==='/api/admin/customers'){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
