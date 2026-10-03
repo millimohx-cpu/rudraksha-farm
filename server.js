@@ -223,6 +223,16 @@ async function api(req,res){
       const r=await pool.query('SELECT phone,name,email FROM customers WHERE phone=$1',[phone]);
       return json(res,200,{customer:r.rows[0]||{phone,name:null,email:null}});
     }
+    if(req.method==='POST'&&p==='/api/customer/logout'){
+      const h=req.headers.authorization||'';
+      if(h.startsWith('Bearer '))await pool.query('DELETE FROM customer_sessions WHERE token=$1',[h.slice(7)]);
+      return json(res,200,{ok:true});
+    }
+    if(req.method==='GET'&&p==='/api/customer/orders'){
+      const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
+      const r=await pool.query("SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE customer->>'phone' IN ($1,'+91'||$1,'91'||$1) ORDER BY created_at DESC",[phone]);
+      return json(res,200,{orders:r.rows.map(o=>({id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}))});
+    }
     if(req.method==='PATCH'&&p==='/api/customer/profile'){
       const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
       const b=await body(req),name=String(b.name||'').trim(),email=String(b.email||'').trim().toLowerCase();
@@ -391,6 +401,10 @@ function serve(req,res){
   res.writeHead(200,headers);fs.createReadStream(file).pipe(res);
 }
 const server=http.createServer(async(req,res)=>{
+  res.setHeader('X-Content-Type-Options','nosniff');
+  res.setHeader('X-Frame-Options','SAMEORIGIN');
+  res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy','camera=(),microphone=(),geolocation=()');
   if(req.url.startsWith('/api/')){const r=await api(req,res);if(r===null)json(res,404,{error:'API route not found'})}
   else serve(req,res);
 });
