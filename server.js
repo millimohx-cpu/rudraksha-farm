@@ -324,7 +324,7 @@ async function api(req,res){
     }
     if(req.method==='GET'&&p==='/api/customer/orders'){
       const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
-      const r=await pool.query("SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE customer->>'phone' IN ($1,'+91'||$1,'91'||$1) ORDER BY created_at DESC",[phone]);
+      const r=await pool.query("SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at,order_access_token FROM orders WHERE customer->>'phone' IN ($1,'+91'||$1,'91'||$1) ORDER BY created_at DESC",[phone]);
       return json(res,200,{orders:r.rows.map(o=>({id:o.id,accessToken:o.order_access_token,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}))});
     }
     if(req.method==='PATCH'&&p==='/api/customer/profile'){
@@ -527,7 +527,7 @@ async function api(req,res){
     }
     if(req.method==='GET'&&p.startsWith('/api/admin/orders/')&&p.endsWith('/notifications')){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
-      const id=p.split('/')[4];
+      const id=p.split('/')[3];
       const r=await pool.query('SELECT id,event,created_at,sent_at,channel FROM order_notifications WHERE order_id=$1 ORDER BY created_at DESC',[id]);
       return json(res,200,{notifications:r.rows.map(x=>({id:x.id,event:x.event,createdAt:new Date(x.created_at).toISOString(),sentAt:x.sent_at?new Date(x.sent_at).toISOString():null,channel:x.channel}))});
     }
