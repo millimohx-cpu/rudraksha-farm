@@ -434,15 +434,13 @@ async function submitOrder(e){
     }
 
     if(out.paymentStatus==="paid"){
-      alert("Payment successful! Your order has been confirmed.");
       cart=[];
       render();
-      window.history.replaceState({},document.title,"/");
+      window.location.replace("/order.html?order_id="+encodeURIComponent(orderId));
     }else if(out.paymentStatus==="pending"){
-      alert("Payment is still being verified. Please wait a moment.");
-      window.history.replaceState({},document.title,"/");
+      window.location.replace("/order.html?order_id="+encodeURIComponent(orderId));
     }else{
-      alert("Payment was not successful.");
+      alert("Payment was not successful. Please contact Rudraksha Farm if money was deducted.");
       window.history.replaceState({},document.title,"/");
     }
 
