@@ -81,6 +81,10 @@ async function initDb(){
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ;
+    CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders ((customer->>'phone'));
+    CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders (created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_customer_sessions_phone ON customer_sessions (phone);
+    CREATE INDEX IF NOT EXISTS idx_customer_sessions_expires_at ON customer_sessions (expires_at);
   `);
   const {rows}=await pool.query('SELECT COUNT(*)::int AS count FROM products');
   if(rows[0].count===0){
@@ -165,7 +169,10 @@ function verifyWebhook(rawBody,signature,timestamp){
   return a.length===b.length&&crypto.timingSafeEqual(a,b);
 }
 async function calc(items){
-  const products=await dbProducts(true);
+  const requested=[...new Set((items||[]).map(i=>String(i.productId||'')).filter(Boolean))];
+  if(!requested.length)throw Error('Cart is empty');
+  const r=await pool.query('SELECT id,name,pack,price,stock,active FROM products WHERE active=true AND id=ANY($1::text[])',[requested]);
+  const products=r.rows;
   let subtotal=0;const normalized=[];
   for(const i of (items||[])){
     const p=products.find(x=>x.id===i.productId);
@@ -180,7 +187,7 @@ async function calc(items){
   const shipping=subtotal>=1999?0:101;
   return {items:normalized,subtotal,shipping,total:subtotal+shipping};
 }
-function normalizePhone(v){let p=String(v||'').replace(/\\D/g,'');if(p.startsWith('91')&&p.length===12)p=p.slice(2);return p.length===10?p:null}
+function normalizePhone(v){let p=String(v||'').replace(/\D/g,'');if(p.startsWith('91')&&p.length===12)p=p.slice(2);return p.length===10?p:null}
 function otpHash(phone,otp){return crypto.createHash('sha256').update(String(phone)+':'+String(otp)+':'+SESSION_SECRET).digest('hex')}
 async function sendOtpSms(phone,otp){
   if(!OTP_API_URL||!OTP_API_KEY)throw Error('OTP service is not configured. Add OTP_API_URL and OTP_API_KEY in Render environment variables.');
