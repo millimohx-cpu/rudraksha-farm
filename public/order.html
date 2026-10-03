@@ -6,7 +6,7 @@
 <title>Rudraksha Farm — Order Status</title>
 <style>
 :root{--ink:#17120e;--cream:#f4eee3;--green:#173a2b;--gold:#b68a3b;--muted:#776b5d;--line:#ddd2c2;--white:#fffaf1}
-*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(760px,92vw);margin:auto}.top{background:#0d0906;color:#fff;padding:22px 0}.brand{font-weight:700;letter-spacing:.12em}.hero{text-align:center;padding:55px 0 25px}.hero h1{font-family:Georgia,serif;font-size:42px;margin:8px 0}.hero p{color:var(--muted);margin:0}.card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 8px 30px rgba(40,25,10,.06);margin:18px 0}.status{display:flex;align-items:center;gap:14px}.dot{width:14px;height:14px;border-radius:50%;background:var(--green);flex:0 0 auto}.label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.value{font-size:22px;font-weight:700;margin-top:4px}.row{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.muted{color:var(--muted);font-size:13px}.btn{display:inline-block;border:0;border-radius:9px;padding:12px 17px;cursor:pointer;background:var(--green);color:#fff;text-decoration:none;margin:5px 5px 0 0}.btn.alt{background:#eee3d2;color:var(--ink)}.error{color:#9a2e20}.hidden{display:none}.items{margin-top:10px}.item{padding:9px 0}.actions{margin-top:18px}@media(max-width:600px){.hero h1{font-size:34px}.row{align-items:flex-start}.value{font-size:18px}}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(760px,92vw);margin:auto}.top{background:#0d0906;color:#fff;padding:22px 0}.brand{font-weight:700;letter-spacing:.12em}.hero{text-align:center;padding:55px 0 25px}.hero h1{font-family:Georgia,serif;font-size:42px;margin:8px 0}.hero p{color:var(--muted);margin:0}.card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 8px 30px rgba(40,25,10,.06);margin:18px 0}.status{display:flex;align-items:center;gap:14px}.dot{width:14px;height:14px;border-radius:50%;background:var(--green);flex:0 0 auto}.label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.value{font-size:22px;font-weight:700;margin-top:4px}.row{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.muted{color:var(--muted);font-size:13px}.btn{display:inline-block;border:0;border-radius:9px;padding:12px 17px;cursor:pointer;background:var(--green);color:#fff;text-decoration:none;margin:5px 5px 0 0}.btn.alt{background:#eee3d2;color:var(--ink)}.error{color:#9a2e20}.timeline{margin-top:18px}.step{display:flex;gap:12px;position:relative;padding:0 0 18px}.step:not(:last-child):before{content:'';position:absolute;left:6px;top:14px;bottom:0;width:2px;background:var(--line)}.bullet{width:14px;height:14px;border-radius:50%;background:var(--line);border:2px solid var(--white);box-shadow:0 0 0 1px var(--line);flex:0 0 auto;z-index:1}.step.done .bullet{background:var(--green);box-shadow:0 0 0 1px var(--green)}.step.current .bullet{background:var(--gold);box-shadow:0 0 0 1px var(--gold)}.step strong{display:block;text-transform:capitalize}.step small{color:var(--muted)}.hidden{display:none}.items{margin-top:10px}.item{padding:9px 0}.actions{margin-top:18px}@media(max-width:600px){.hero h1{font-size:34px}.row{align-items:flex-start}.value{font-size:18px}}
 </style>
 </head>
 <body>
@@ -20,7 +20,7 @@
 <div class="row" style="margin-top:18px"><span>Order ID</span><b id="orderId">—</b></div>
 <div class="row"><span>Payment</span><b id="payment">—</b></div>
 <div id="items" class="items"></div>
-<div class="row"><span>Total</span><b id="total">—</b></div><div id="shippingInfo" class="row hidden"><span>Shipping</span><b id="shippingValue">—</b></div>
+<div class="row"><span>Total</span><b id="total">—</b></div><div id="shippingInfo" class="row hidden"><span>Shipping</span><b id="shippingValue">—</b></div><div id="trackingAction" class="hidden" style="margin-top:14px"></div><div class="timeline" id="timeline"></div>
 <div id="created" class="muted" style="margin-top:14px"></div>
 <div class="actions"><a id="wa" class="btn" target="_blank" rel="noopener">WhatsApp Rudraksha Farm</a><button id="copyOrder" class="btn alt" type="button">Copy Order ID</button><a class="btn alt" href="/">Back to Store</a></div>
 </div>
@@ -55,6 +55,17 @@ async function load(){
       ? "This order has been cancelled."
       : "Your order is being processed. Payment status will update here.";
   $("statusDot").style.background=paid ? "var(--green)" : cancelled ? "#9a2e20" : "var(--gold)";
+  const steps=["received","payment_confirmed","processing","dispatched","delivered"],idx=steps.indexOf(o.status);
+  $("timeline").innerHTML='<div class="label" style="margin-bottom:12px">Order journey</div>'+steps.map((s,n)=>'<div class="step '+(n<idx||o.status===s?'done ':'')+(o.status===s?'current':'')+'"><div class="bullet"></div><div><strong>'+esc(s.replaceAll("_"," "))+'</strong><small>'+((n<idx||o.status===s)?"Completed / current":"Upcoming")+'</small></div></div>').join('');
+  if(o.courier&&o.trackingNumber){
+    let url='';
+    const k=String(o.courier).toLowerCase();
+    if(k.includes("delhivery"))url="https://www.delhivery.com/track/package/"+encodeURIComponent(o.trackingNumber);
+    else if(k.includes("bluedart"))url="https://www.bluedart.com/tracking";
+    else if(k.includes("ekart"))url="https://ekartlogistics.com/track";
+    $("trackingAction").classList.remove("hidden");
+    $("trackingAction").innerHTML='<a class="btn" '+(url?'target="_blank" rel="noopener" href="'+url+'"':'href="https://www.google.com/search?q='+encodeURIComponent(o.courier+" "+o.trackingNumber+" tracking")+'"')+'>Track shipment · '+esc(o.trackingNumber)+'</a>';
+  }
   $("wa").href="https://wa.me/917296820070?text="+encodeURIComponent("Hello Rudraksha Farm, I want an update on my order "+o.id+".");
   $("copyOrder").onclick=async()=>{
     try{
