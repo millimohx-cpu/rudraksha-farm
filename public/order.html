@@ -68,8 +68,18 @@ async function load(){
   };
   $("loading").classList.add("hidden");$("content").classList.remove("hidden");
 }
+async function refreshPayment(){
+  if(!id)return;
+  try{
+    const r=await fetch("/api/payments/cashfree/status/"+encodeURIComponent(id),{cache:"no-store"});
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d.paymentStatus==="paid"||d.paymentStatus==="failed"||d.paymentStatus==="pending")await load();
+  }catch(e){}
+}
 load().catch(e=>{$("loading").classList.add("hidden");$("error").textContent=e.message;$("error").classList.remove("hidden");});
-setInterval(()=>load().catch(()=>{}),15000);
+setTimeout(refreshPayment,800);
+setInterval(()=>{load().catch(()=>{});refreshPayment()},15000);
 </script>
 </body>
 </html>
