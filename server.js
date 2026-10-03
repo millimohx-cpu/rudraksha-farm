@@ -61,6 +61,7 @@ async function initDb(){
       token TEXT PRIMARY KEY,
       expires_at TIMESTAMPTZ NOT NULL
     );
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS inventory_deducted BOOLEAN NOT NULL DEFAULT FALSE;
   `);
   const {rows}=await pool.query('SELECT COUNT(*)::int AS count FROM products');
   if(rows[0].count===0){
