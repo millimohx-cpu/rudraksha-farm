@@ -16,13 +16,13 @@
 <section id="loading" class="card">Loading your order...</section>
 <section id="content" class="hidden">
 <div class="card">
-<div class="status"><div class="dot"></div><div><div class="label">Current status</div><div id="status" class="value">—</div></div></div>
+<div class="status"><div class="dot" id="statusDot"></div><div><div class="label">Current status</div><div id="status" class="value">—</div><div id="statusMessage" class="muted" style="margin-top:7px"></div></div></div>
 <div class="row" style="margin-top:18px"><span>Order ID</span><b id="orderId">—</b></div>
 <div class="row"><span>Payment</span><b id="payment">—</b></div>
 <div id="items" class="items"></div>
 <div class="row"><span>Total</span><b id="total">—</b></div>
 <div id="created" class="muted" style="margin-top:14px"></div>
-<div class="actions"><a id="wa" class="btn" target="_blank" rel="noopener">WhatsApp Rudraksha Farm</a><a class="btn alt" href="/">Back to Store</a></div>
+<div class="actions"><a id="wa" class="btn" target="_blank" rel="noopener">WhatsApp Rudraksha Farm</a><button id="copyOrder" class="btn alt" type="button">Copy Order ID</button><a class="btn alt" href="/">Back to Store</a></div>
 </div>
 </section>
 <section id="error" class="card error hidden"></section>
@@ -34,20 +34,41 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const params=new URLSearchParams(location.search),id=params.get("order_id");
 async function load(){
   if(!id){throw new Error("Order ID is missing.");}
-  const r=await fetch("/api/orders/"+encodeURIComponent(id));
+  const r=await fetch("/api/orders/"+encodeURIComponent(id),{cache:"no-store"});
   const d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(d.error||"Order not found.");
   const o=d.order;
-  $("status").textContent=(o.status||"received").replaceAll("_"," ");
+  const status=(o.status||"received").replaceAll("_"," ");
+  const payment=(o.paymentStatus||"pending").replaceAll("_"," ");
+  $("status").textContent=status;
   $("orderId").textContent=o.id;
-  $("payment").textContent=(o.paymentStatus||"pending").replaceAll("_"," ");
+  $("payment").textContent=payment;
   $("total").textContent=money(o.total);
   $("created").textContent="Placed "+new Date(o.createdAt).toLocaleString("en-IN");
   $("items").innerHTML=(o.items||[]).map(x=>'<div class="item">'+esc(x.pack)+" × "+esc(x.quantity)+" — "+money(x.unitPrice*x.quantity)+"</div>").join("");
+  const paid=payment==="paid";
+  const cancelled=status==="cancelled";
+  $("statusMessage").textContent=paid
+    ? "Payment received. Your order is confirmed."
+    : cancelled
+      ? "This order has been cancelled."
+      : "Your order is being processed. Payment status will update here.";
+  $("statusDot").style.background=paid ? "var(--green)" : cancelled ? "#9a2e20" : "var(--gold)";
   $("wa").href="https://wa.me/917296820070?text="+encodeURIComponent("Hello Rudraksha Farm, I want an update on my order "+o.id+".");
+  $("copyOrder").onclick=async()=>{
+    try{
+      await navigator.clipboard.writeText(o.id);
+      $("copyOrder").textContent="Copied ✓";
+      setTimeout(()=>$("copyOrder").textContent="Copy Order ID",1600);
+    }catch{
+      $("copyOrder").textContent="Copy unavailable";
+      setTimeout(()=>$("copyOrder").textContent="Copy Order ID",1600);
+    }
+  };
   $("loading").classList.add("hidden");$("content").classList.remove("hidden");
 }
 load().catch(e=>{$("loading").classList.add("hidden");$("error").textContent=e.message;$("error").classList.remove("hidden");});
+setInterval(()=>load().catch(()=>{}),15000);
 </script>
 </body>
 </html>
