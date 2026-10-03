@@ -433,6 +433,31 @@ async function api(req,res){
       const r=await pool.query('SELECT * FROM orders ORDER BY created_at ASC');
       return json(res,200,{orders:r.rows.map(rowOrder)});
     }
+    if(req.method==='GET'&&p==='/api/admin/orders/export'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const status=String(u.searchParams.get('status')||'').trim();
+      const payment=String(u.searchParams.get('payment')||'').trim();
+      const search=String(u.searchParams.get('search')||'').trim().toLowerCase();
+      const from=String(u.searchParams.get('from')||'').trim();
+      const to=String(u.searchParams.get('to')||'').trim();
+      const where=[],vals=[];
+      if(['received','payment_confirmed','processing','dispatched','delivered','cancelled'].includes(status)){vals.push(status);where.push(`status=${vals.length}`);}
+      if(['paid','pending','failed'].includes(payment)){vals.push(payment);where.push(`payment_status=${vals.length}`);}
+      if(from&&/^\\d{4}-\\d{2}-\\d{2}$/.test(from)){vals.push(from);where.push(`created_at >= ${vals.length}::date`);}
+      if(to&&/^\\d{4}-\\d{2}-\\d{2}$/.test(to)){vals.push(to);where.push(`created_at < (${vals.length}::date + INTERVAL '1 day')`);}
+      if(search){vals.push('%'+search+'%');const n=vals.length;where.push(`LOWER(id||' '||COALESCE(customer->>'name','')||' '||COALESCE(customer->>'phone','')||' '||COALESCE(customer->>'email','')) LIKE ${n}`);}
+      const q='SELECT * FROM orders '+(where.length?'WHERE '+where.join(' AND '):'')+' ORDER BY created_at DESC';
+      const r=await pool.query(q,vals);
+      const escCsv=v=>{let x=String(v??'');if(/[",\\n\\r]/.test(x))x='"'+x.replace(/"/g,'""')+'"';return x};
+      const headers=['Order ID','Created At','Customer Name','Phone','Email','Address','Items','Subtotal','Shipping','Discount','Coupon','Total','Payment','Status','Courier','Tracking / AWB','Dispatched At'];
+      const rows=r.rows.map(o=>{
+        const items=(o.items||[]).map(i=>`${i.pack||i.name||'Product'} x ${i.quantity||0}`).join(' | ');
+        return [o.id,new Date(o.created_at).toISOString(),o.customer?.name,o.customer?.phone,o.customer?.email,o.customer?.address,items,o.subtotal,o.shipping,o.discount||0,o.coupon_code,o.total,o.payment_status,o.status,o.courier,o.tracking_number,o.dispatched_at?new Date(o.dispatched_at).toISOString():''].map(escCsv).join(',');
+      });
+      const csv='\\uFEFF'+headers.map(escCsv).join(',')+'\\n'+rows.join('\\n')+'\\n';
+      res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':`attachment; filename="rudraksha-orders-${new Date().toISOString().slice(0,10)}.csv"`,'Cache-Control':'no-store'});
+      return res.end(csv);
+    }
     if(req.method==='PATCH'&&p.startsWith('/api/admin/orders/')){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
       const id=p.split('/').pop(),b=await body(req),o=await dbOrder(id);
