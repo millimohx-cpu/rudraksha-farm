@@ -186,6 +186,15 @@ async function sendOtpSms(phone,otp){
   const r=await fetch(OTP_API_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OTP_API_KEY},body:JSON.stringify({phone:'+91'+phone,otp,message:'Your Rudraksha Farm login OTP is '+otp+'. It expires in 5 minutes.'})});
   if(!r.ok){const raw=await r.text();throw Error('Unable to send OTP'+(raw?' — '+raw.slice(0,180):''));}
 }
+const loginAttempts=new Map();
+function allowCustomerLogin(key){
+  const now=Date.now(),x=loginAttempts.get(key)||{count:0,at:now};
+  if(now-x.at>15*60*1000){x.count=0;x.at=now}
+  x.count++;
+  loginAttempts.set(key,x);
+  if(loginAttempts.size>5000){for(const [k,v] of loginAttempts)if(now-v.at>15*60*1000)loginAttempts.delete(k)}
+  return x.count<=8;
+}
 async function customerAuth(req){const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))return null;const r=await pool.query('SELECT phone FROM customer_sessions WHERE token=$1 AND expires_at>NOW()',[h.slice(7)]);return r.rowCount?r.rows[0].phone:null}
 async function api(req,res){
   const u=new URL(req.url,`http://${req.headers.host}`),p=u.pathname;
@@ -206,6 +215,8 @@ async function api(req,res){
     if(req.method==='POST'&&p==='/api/customer/login'){
       const b=await body(req),phone=normalizePhone(b.phone),password=String(b.password||'');
       if(!phone||!password)return json(res,400,{error:'Mobile number and password are required'});
+      const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();
+      if(!allowCustomerLogin(ip+'|'+phone))return json(res,429,{error:'Too many login attempts. Please try again later.'});
       const r=await pool.query('SELECT phone,name,password_hash FROM customers WHERE phone=$1',[phone]);
       if(!r.rowCount||!r.rows[0].password_hash)return json(res,401,{error:'Invalid mobile number or password'});
       const hash=await new Promise((resolve,reject)=>crypto.scrypt(password,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
