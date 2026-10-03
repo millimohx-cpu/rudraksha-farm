@@ -167,10 +167,11 @@ async function saveOrder(o){
 function json(res,status,obj){const s=JSON.stringify(obj);res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(s)}
 function body(req){return new Promise((resolve,reject)=>{let d='';req.on('data',c=>{d+=c;if(d.length>1e6)req.destroy()});req.on('end',()=>{try{resolve(d?JSON.parse(d):{})}catch(e){reject(e)}});req.on('error',reject)})}
 function token(){return crypto.randomBytes(32).toString('hex')}
+function sessionHash(t){return crypto.createHash('sha256').update(String(t)).digest('hex')}
 async function auth(req){
   const h=req.headers.authorization||'';
   if(!h.startsWith('Bearer '))return false;
-  const r=await pool.query('SELECT token FROM sessions WHERE token=$1 AND expires_at>NOW()',[h.slice(7)]);
+  const r=await pool.query('SELECT token FROM sessions WHERE token=$1 AND expires_at>NOW()',[sessionHash(h.slice(7))]);
   return r.rowCount>0;
 }
 function orderId(){const d=new Date().toISOString().slice(0,10).replaceAll('-','');return `RF-${d}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`}
@@ -251,7 +252,7 @@ function allowCustomerLogin(key){
   if(loginAttempts.size>5000){for(const [k,v] of loginAttempts)if(now-v.at>15*60*1000)loginAttempts.delete(k)}
   return x.count<=8;
 }
-async function customerAuth(req){const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))return null;const r=await pool.query('SELECT phone FROM customer_sessions WHERE token=$1 AND expires_at>NOW()',[h.slice(7)]);return r.rowCount?r.rows[0].phone:null}
+async function customerAuth(req){const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))return null;const r=await pool.query('SELECT phone FROM customer_sessions WHERE token=$1 AND expires_at>NOW()',[sessionHash(h.slice(7))]);return r.rowCount?r.rows[0].phone:null}
 async function api(req,res){
   const u=new URL(req.url,`http://${req.headers.host}`),p=u.pathname;
   try{
@@ -300,7 +301,7 @@ async function api(req,res){
     }
     if(req.method==='POST'&&p==='/api/customer/logout'){
       const h=req.headers.authorization||'';
-      if(h.startsWith('Bearer '))await pool.query('DELETE FROM customer_sessions WHERE token=$1',[h.slice(7)]);
+      if(h.startsWith('Bearer '))await pool.query('DELETE FROM customer_sessions WHERE token=$1',[sessionHash(h.slice(7))]);
       return json(res,200,{ok:true});
     }
     if(req.method==='GET'&&p==='/api/customer/orders'){
