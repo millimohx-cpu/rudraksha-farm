@@ -19,9 +19,6 @@ const CASHFREE_SECRET_KEY=process.env.CASHFREE_SECRET_KEY||'';
 const CASHFREE_ENV=(process.env.CASHFREE_ENV||'sandbox').toLowerCase();
 const CASHFREE_API_VERSION=process.env.CASHFREE_API_VERSION||'2025-01-01';
 const PUBLIC_BASE_URL=(process.env.PUBLIC_BASE_URL||'').replace(/\/$/,'');
-const OTP_PROVIDER=(process.env.OTP_PROVIDER||'').toLowerCase();
-const OTP_API_URL=process.env.OTP_API_URL||'';
-const OTP_API_KEY=process.env.OTP_API_KEY||'';
 const CASHFREE_BASE_URL=CASHFREE_ENV==='production'?'https://api.cashfree.com/pg':'https://sandbox.cashfree.com/pg';
 
 if(!DATABASE_URL)console.warn('DATABASE_URL is not configured');
@@ -64,19 +61,16 @@ async function initDb(){
       token TEXT PRIMARY KEY,
       expires_at TIMESTAMPTZ NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS customer_otp_challenges(
-      phone TEXT PRIMARY KEY,
-      otp_hash TEXT NOT NULL,
-      expires_at TIMESTAMPTZ NOT NULL,
-      attempts INTEGER NOT NULL DEFAULT 0,
-      last_sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
     CREATE TABLE IF NOT EXISTS customers(
       phone TEXT PRIMARY KEY,
       name TEXT,
+      email TEXT,
+      password_hash TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       last_login_at TIMESTAMPTZ
     );
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS password_hash TEXT;
     CREATE TABLE IF NOT EXISTS customer_sessions(
       token TEXT PRIMARY KEY,
       phone TEXT NOT NULL,
@@ -198,41 +192,31 @@ async function api(req,res){
   try{
     if(req.method==='GET'&&p==='/api/health')return json(res,200,{ok:true,service:'rudraksha-farm',database:Boolean(DATABASE_URL),time:new Date().toISOString()});
     if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>({id,name,pack,price,available:Number.isInteger(stock)?stock>0:false}))});
-    if(req.method==='POST'&&p==='/api/customer/request-otp'){
-      const b=await body(req),phone=normalizePhone(b.phone);
-      if(!phone)return json(res,400,{error:'Enter a valid 10-digit Indian mobile number'});
-      const old=await pool.query('SELECT last_sent_at FROM customer_otp_challenges WHERE phone=$1',[phone]);
-      if(old.rowCount&&Date.now()-new Date(old.rows[0].last_sent_at).getTime()<30000)return json(res,429,{error:'Please wait 30 seconds before requesting another OTP'});
-      const otp=String(crypto.randomInt(100000,1000000));
-      try{await sendOtpSms(phone,otp);}catch(e){return json(res,503,{error:e.message})}
-      await pool.query('INSERT INTO customer_otp_challenges(phone,otp_hash,expires_at,attempts,last_sent_at) VALUES($1,$2,NOW()+INTERVAL \'5 minutes\',0,NOW()) ON CONFLICT(phone) DO UPDATE SET otp_hash=EXCLUDED.otp_hash,expires_at=EXCLUDED.expires_at,attempts=0,last_sent_at=NOW()',[phone,otpHash(phone,otp)]);
-      return json(res,200,{ok:true,message:'OTP sent successfully',expiresIn:300});
+    if(req.method==='POST'&&p==='/api/customer/register'){
+      const b=await body(req),phone=normalizePhone(b.phone),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||'');
+      if(!phone||password.length<8)return json(res,400,{error:'Valid mobile number and password of at least 8 characters are required'});
+      if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(res,400,{error:'Enter a valid email address'});
+      const existing=await pool.query('SELECT phone FROM customers WHERE phone=$1',[phone]);
+      if(existing.rowCount)return json(res,409,{error:'An account already exists for this mobile number. Please login.'});
+      const hash=await new Promise((resolve,reject)=>crypto.scrypt(password,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
+      await pool.query('INSERT INTO customers(phone,name,email,password_hash,created_at,last_login_at) VALUES($1,$2,$3,$4,NOW(),NOW())',[phone,String(b.name||'').trim()||null,email||null,hash]);
+      const t=token();await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[t,phone]);
+      return json(res,201,{token:t,phone:'+91'+phone});
     }
-    if(req.method==='POST'&&p==='/api/customer/verify-otp'){
-      const b=await body(req),phone=normalizePhone(b.phone),otp=String(b.otp||'').trim();
-      if(!phone||!/^[0-9]{6}$/.test(otp))return json(res,400,{error:'Valid phone number and 6-digit OTP are required'});
-      const r=await pool.query('SELECT * FROM customer_otp_challenges WHERE phone=$1',[phone]);
-      if(!r.rowCount)return json(res,400,{error:'OTP expired or not requested'});
-      const c=r.rows[0];if(new Date(c.expires_at).getTime()<Date.now())return json(res,400,{error:'OTP expired. Request a new OTP.'});
-      if(c.attempts>=5)return json(res,429,{error:'Too many incorrect attempts. Request a new OTP.'});
-      if(otpHash(phone,otp)!==c.otp_hash){await pool.query('UPDATE customer_otp_challenges SET attempts=attempts+1 WHERE phone=$1',[phone]);return json(res,401,{error:'Incorrect OTP'});}
-      const t=token();
-      await pool.query('INSERT INTO customers(phone,name,last_login_at) VALUES($1,$2,NOW()) ON CONFLICT(phone) DO UPDATE SET last_login_at=NOW()',[phone,String(b.name||'').trim()||null]);
-      await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[t,phone]);
-      await pool.query('DELETE FROM customer_otp_challenges WHERE phone=$1',[phone]);
+    if(req.method==='POST'&&p==='/api/customer/login'){
+      const b=await body(req),phone=normalizePhone(b.phone),password=String(b.password||'');
+      if(!phone||!password)return json(res,400,{error:'Mobile number and password are required'});
+      const r=await pool.query('SELECT phone,name,password_hash FROM customers WHERE phone=$1',[phone]);
+      if(!r.rowCount||!r.rows[0].password_hash)return json(res,401,{error:'Invalid mobile number or password'});
+      const hash=await new Promise((resolve,reject)=>crypto.scrypt(password,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
+      const a=Buffer.from(hash,'hex'),bhash=Buffer.from(r.rows[0].password_hash,'hex');
+      if(a.length!==bhash.length||!crypto.timingSafeEqual(a,bhash))return json(res,401,{error:'Invalid mobile number or password'});
+      await pool.query('UPDATE customers SET last_login_at=NOW() WHERE phone=$1',[phone]);
+      const t=token();await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[t,phone]);
       return json(res,200,{token:t,phone:'+91'+phone});
     }
-    if(req.method==='GET'&&p==='/api/customer/me'){
-      const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
-      const r=await pool.query('SELECT phone,name FROM customers WHERE phone=$1',[phone]);return json(res,200,{customer:r.rows[0]||{phone,name:null}});
-    }
-    if(req.method==='GET'&&p==='/api/customer/orders'){
-      const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
-      const r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE customer->>'phone' IN ($1,'+91'||$1,'91'||$1) ORDER BY created_at DESC',[phone]);
-      return json(res,200,{orders:r.rows.map(o=>({id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}))});
-    }
-    if(req.method==='POST'&&p==='/api/customer/logout'){
-      const h=req.headers.authorization||'';if(h.startsWith('Bearer '))await pool.query('DELETE FROM customer_sessions WHERE token=$1',[h.slice(7)]);return json(res,200,{ok:true});
+    if(req.method==='POST'&&p==='/api/customer/register-or-login'){
+      return json(res,410,{error:'OTP login has been removed. Use password login.'});
     }
     if(req.method==='POST'&&p==='/api/admin/login'){
       if(ADMIN_EMAIL==='admin@example.com'||ADMIN_PASSWORD==='CHANGE_THIS_BEFORE_DEPLOY'||SESSION_SECRET==='CHANGE_THIS_TO_A_LONG_RANDOM_SECRET')return json(res,503,{error:'Admin credentials are not configured on the server'});
