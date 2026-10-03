@@ -157,7 +157,13 @@ function orderId(){const d=new Date().toISOString().slice(0,10).replaceAll('-','
 function requireCashfree(){if(!CASHFREE_APP_ID||!CASHFREE_SECRET_KEY)throw Error('Cashfree credentials are not configured on the server')}
 async function cashfreeFetch(endpoint,options={}){
   requireCashfree();
-  const r=await fetch(CASHFREE_BASE_URL+endpoint,{...options,headers:{'x-client-id':CASHFREE_APP_ID,'x-client-secret':CASHFREE_SECRET_KEY,'x-api-version':CASHFREE_API_VERSION,'Accept':'application/json','Content-Type':'application/json',...(options.headers||{})}});
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),10000);
+  let r;
+  try{
+    r=await fetch(CASHFREE_BASE_URL+endpoint,{...options,signal:controller.signal,headers:{'x-client-id':CASHFREE_APP_ID,'x-client-secret':CASHFREE_SECRET_KEY,'x-api-version':CASHFREE_API_VERSION,'Accept':'application/json','Content-Type':'application/json',...(options.headers||{})}});
+  }catch(e){if(e.name==='AbortError')throw Error('Cashfree request timed out');throw e}finally{clearTimeout(timer)}
+
   const raw=await r.text();let data;try{data=raw?JSON.parse(raw):{}}catch{data={raw}}
   if(!r.ok){const e=new Error(data?.message||data?.error_description||`Cashfree API error (${r.status})`);e.status=r.status;e.details=data;throw e}
   return data;
@@ -187,6 +193,8 @@ async function calc(items){
   const shipping=subtotal>=1999?0:101;
   return {items:normalized,subtotal,shipping,total:subtotal+shipping};
 }
+const cashfreeStatusCache=new Map();
+function cachedCashfreeStatus(id,value){const now=Date.now(),hit=cashfreeStatusCache.get(id);if(hit&&now-hit.at<5000)return hit.value;cashfreeStatusCache.set(id,{at:now,value});if(cashfreeStatusCache.size>2000){for(const [k,v] of cashfreeStatusCache)if(now-v.at>15000)cashfreeStatusCache.delete(k)}return value}
 const orderStatusCache=new Map();
 function cachedOrderStatus(id,row){
   const now=Date.now(),hit=orderStatusCache.get(id);
@@ -342,7 +350,7 @@ async function api(req,res){
       // can trigger a verification check while the customer is viewing it.
       setImmediate(async()=>{
         try{
-          const payments=await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfree_order_id||id)}/payments`,{method:'GET'});
+          const hit=cashfreeStatusCache.get(id);const payments=hit&&Date.now()-hit.at<5000?hit.value:cachedCashfreeStatus(id,await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfree_order_id||id)}/payments`,{method:'GET'}));
           const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');
           const pending=Array.isArray(payments)&&payments.some(x=>x.payment_status==='PENDING');
           if(success)await markOrderPaid(id);
