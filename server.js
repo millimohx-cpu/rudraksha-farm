@@ -447,6 +447,27 @@ async function api(req,res){
       const r=await pool.query('SELECT id,event,created_at,sent_at,channel FROM order_notifications WHERE order_id=$1 ORDER BY created_at DESC',[id]);
       return json(res,200,{notifications:r.rows.map(x=>({id:x.id,event:x.event,createdAt:new Date(x.created_at).toISOString(),sentAt:x.sent_at?new Date(x.sent_at).toISOString():null,channel:x.channel}))});
     }
+    if(req.method==='GET'&&p==='/api/admin/customers'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const r=await pool.query(`
+        SELECT customer->>'phone' AS phone,
+               MAX(customer->>'name') AS name,
+               MAX(customer->>'email') AS email,
+               COUNT(*)::int AS orders,
+               COUNT(*) FILTER (WHERE payment_status='paid')::int AS paid_orders,
+               COALESCE(SUM(total) FILTER (WHERE payment_status='paid'),0)::numeric AS paid_value,
+               MAX(created_at) AS last_order_at
+        FROM orders
+        WHERE COALESCE(customer->>'phone','') <> ''
+        GROUP BY customer->>'phone'
+        ORDER BY MAX(created_at) DESC
+      `);
+      return json(res,200,{customers:r.rows.map(x=>({
+        phone:x.phone,name:x.name||'',email:x.email||'',orders:x.orders,
+        paidOrders:x.paid_orders,paidValue:Number(x.paid_value||0),
+        lastOrderAt:x.last_order_at?new Date(x.last_order_at).toISOString():null
+      }))});
+    }
     if(req.method==='GET'&&p==='/api/admin/inventory'){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
       return json(res,200,{products:await dbProducts(false)});
