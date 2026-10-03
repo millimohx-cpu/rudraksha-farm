@@ -157,7 +157,7 @@ async function calc(items){
     normalized.push({productId:p.id,name:p.name,pack:p.pack,unitPrice,quantity:q});
   }
   if(!normalized.length)throw Error('Cart is empty');
-  const shipping=subtotal>=1999?0:101;
+  const shipping=subtotal>=1999?0:3;
   return {items:normalized,subtotal,shipping,total:subtotal+shipping};
 }
 async function api(req,res){
