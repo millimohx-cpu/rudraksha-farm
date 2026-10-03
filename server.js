@@ -30,6 +30,7 @@ const pool=new Pool({
   idleTimeoutMillis:30000,
   connectionTimeoutMillis:10000
 });
+pool.on('error',e=>console.error('Postgres pool error:',e.message));
 
 async function initDb(){
   if(!DATABASE_URL)throw Error('DATABASE_URL is not configured');
@@ -199,7 +200,15 @@ async function customerAuth(req){const h=req.headers.authorization||'';if(!h.sta
 async function api(req,res){
   const u=new URL(req.url,`http://${req.headers.host}`),p=u.pathname;
   try{
-    if(req.method==='GET'&&p==='/api/health')return json(res,200,{ok:true,service:'rudraksha-farm',database:Boolean(DATABASE_URL),time:new Date().toISOString()});
+    if(req.method==='GET'&&p==='/api/health'){
+      try{
+        await pool.query('SELECT 1');
+        return json(res,200,{ok:true,service:'rudraksha-farm',database:true,time:new Date().toISOString()});
+      }catch(e){
+        console.error('Health check database error:',e.message);
+        return json(res,503,{ok:false,service:'rudraksha-farm',database:false,time:new Date().toISOString()});
+      }
+    }
     if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>({id,name,pack,price,available:Number.isInteger(stock)?stock>0:false}))});
     if(req.method==='POST'&&p==='/api/customer/register'){
       const b=await body(req),phone=normalizePhone(b.phone),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||'');
@@ -421,4 +430,11 @@ async function start(){
   await initDb();
   server.listen(PORT,()=>console.log(`Rudraksha Farm running on http://localhost:${PORT}`));
 }
+const shutdown=async(signal)=>{
+  console.log(signal+' received, shutting down');
+  server.close(async()=>{try{await pool.end()}finally{process.exit(0)}});
+  setTimeout(()=>process.exit(1),10000).unref();
+};
+process.on('SIGTERM',()=>shutdown('SIGTERM'));
+process.on('SIGINT',()=>shutdown('SIGINT'));
 start().catch(e=>{console.error('Startup failed:',e);process.exit(1)});
