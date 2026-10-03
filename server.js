@@ -83,12 +83,13 @@ async function initDb(){
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ;
     CREATE INDEX IF NOT EXISTS idx_orders_access_token ON orders (order_access_token);
-    UPDATE orders SET order_access_token=encode(gen_random_bytes(32),'hex') WHERE order_access_token IS NULL;
     CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders ((customer->>'phone'));
     CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders (created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_customer_sessions_phone ON customer_sessions (phone);
     CREATE INDEX IF NOT EXISTS idx_customer_sessions_expires_at ON customer_sessions (expires_at);
   `);
+  const missing=await pool.query('SELECT id FROM orders WHERE order_access_token IS NULL');
+  for(const row of missing.rows)await pool.query('UPDATE orders SET order_access_token=$1 WHERE id=$2',[token(),row.id]);
   const {rows}=await pool.query('SELECT COUNT(*)::int AS count FROM products');
   if(rows[0].count===0){
     await pool.query(
