@@ -482,6 +482,11 @@ async function api(req,res){
       if(b.active!==undefined)await pool.query('UPDATE coupons SET active=$1 WHERE id=$2',[!!b.active,id]);
       return json(res,200,{ok:true});
     }
+    if(req.method==='GET'&&p==='/api/admin/system-status'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const db=await pool.query("SELECT NOW() AS time, (SELECT COUNT(*) FROM orders)::int AS orders, (SELECT COUNT(*) FROM products)::int AS products");
+      return json(res,200,{ok:true,database:true,serverTime:new Date().toISOString(),orders:db.rows[0].orders,products:db.rows[0].products,backupAutomationAvailable:false,backupNote:'Use Render database backup/restore controls for managed backups.'});
+    }
     if(req.method==='GET'&&p==='/api/admin/customers'){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
       const r=await pool.query(`
