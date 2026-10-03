@@ -258,10 +258,10 @@ async function api(req,res){
       return json(res,200,{ok:true});
     }
     if(req.method==='GET'&&p.startsWith('/api/orders/')){
-      const id=p.split('/').pop(),r=await pool.query('SELECT id,created_at,items,total,payment_status,status FROM orders WHERE id=$1',[id]);
+      const id=p.split('/').pop(),r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE id=$1',[id]);
       if(!r.rowCount)return json(res,404,{error:'Order not found'});
       const o=r.rows[0];
-      return json(res,200,{order:{id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status}});
+      return json(res,200,{order:{id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}});
     }
     if(req.method==='GET'&&p==='/api/admin/orders'){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
