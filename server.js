@@ -300,24 +300,22 @@ async function api(req,res){
       if(!id)return json(res,400,{error:'Missing order_id'});
       const o=await dbOrder(id);
       if(!o)return json(res,404,{error:'Order not found'});
-      try{
-        const payments=await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfree_order_id||id)}/payments`,{method:'GET'});
-        const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');
-        const pending=Array.isArray(payments)&&payments.some(x=>x.payment_status==='PENDING');
-        if(success){
-          await markOrderPaid(id);
-        }else if(pending){
-          await pool.query("UPDATE orders SET payment_status='pending' WHERE id=$1",[id]);
-        }else{
-          await pool.query("UPDATE orders SET payment_status='failed' WHERE id=$1",[id]);
-        }
-        res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}`,'Cache-Control':'no-store'});
-        return res.end();
-      }catch(e){
-        console.error('Cashfree return verification failed:',e.message);
-        res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}&verification=error`,'Cache-Control':'no-store'});
-        return res.end();
-      }
+      res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}`,'Cache-Control':'no-store'});
+      res.end();
+      // Do not block the customer redirect on Cashfree's verification API.
+      // Webhook remains the primary confirmation path; the order-status page
+      // can trigger a verification check while the customer is viewing it.
+      setImmediate(async()=>{
+        try{
+          const payments=await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfree_order_id||id)}/payments`,{method:'GET'});
+          const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');
+          const pending=Array.isArray(payments)&&payments.some(x=>x.payment_status==='PENDING');
+          if(success)await markOrderPaid(id);
+          else if(pending)await pool.query("UPDATE orders SET payment_status='pending' WHERE id=$1",[id]);
+          else await pool.query("UPDATE orders SET payment_status='failed' WHERE id=$1",[id]);
+        }catch(e){console.error('Cashfree return verification failed:',e.message);}
+      });
+      return;
     }
     if(req.method==='GET'&&p.startsWith('/api/payments/cashfree/status/')){
       const id=p.split('/').pop(),o=await dbOrder(id);
