@@ -20,7 +20,7 @@
 <div class="row" style="margin-top:18px"><span>Order ID</span><b id="orderId">—</b></div>
 <div class="row"><span>Payment</span><b id="payment">—</b></div>
 <div id="items" class="items"></div>
-<div class="row"><span>Total</span><b id="total">—</b></div>
+<div class="row"><span>Total</span><b id="total">—</b></div><div id="shippingInfo" class="row hidden"><span>Shipping</span><b id="shippingValue">—</b></div>
 <div id="created" class="muted" style="margin-top:14px"></div>
 <div class="actions"><a id="wa" class="btn" target="_blank" rel="noopener">WhatsApp Rudraksha Farm</a><button id="copyOrder" class="btn alt" type="button">Copy Order ID</button><a class="btn alt" href="/">Back to Store</a></div>
 </div>
@@ -45,6 +45,7 @@ async function load(){
   $("payment").textContent=payment;
   $("total").textContent=money(o.total);
   $("created").textContent="Placed "+new Date(o.createdAt).toLocaleString("en-IN");
+  if(o.courier||o.trackingNumber){$("shippingInfo").classList.remove("hidden");$("shippingValue").textContent=[o.courier,o.trackingNumber?"AWB / Tracking: "+o.trackingNumber:""].filter(Boolean).join(" · ");}
   $("items").innerHTML=(o.items||[]).map(x=>'<div class="item">'+esc(x.pack)+" × "+esc(x.quantity)+" — "+money(x.unitPrice*x.quantity)+"</div>").join("");
   const paid=payment==="paid";
   const cancelled=status==="cancelled";
