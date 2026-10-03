@@ -194,6 +194,15 @@ async function sendOtpSms(phone,otp){
   const r=await fetch(OTP_API_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OTP_API_KEY},body:JSON.stringify({phone:'+91'+phone,otp,message:'Your Rudraksha Farm login OTP is '+otp+'. It expires in 5 minutes.'})});
   if(!r.ok){const raw=await r.text();throw Error('Unable to send OTP'+(raw?' — '+raw.slice(0,180):''));}
 }
+const paymentAttempts=new Map();
+function allowPaymentCreate(key){
+  const now=Date.now(),x=paymentAttempts.get(key)||{count:0,at:now};
+  if(now-x.at>60*1000){x.count=0;x.at=now}
+  x.count++;
+  paymentAttempts.set(key,x);
+  if(paymentAttempts.size>5000){for(const [k,v] of paymentAttempts)if(now-v.at>60*1000)paymentAttempts.delete(k)}
+  return x.count<=10;
+}
 const loginAttempts=new Map();
 function allowCustomerLogin(key){
   const now=Date.now(),x=loginAttempts.get(key)||{count:0,at:now};
@@ -298,6 +307,8 @@ async function api(req,res){
       await saveOrder(o);return json(res,201,{order:o});
     }
     if(req.method==='POST'&&p==='/api/payments/cashfree/order'){
+      const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();
+      if(!allowPaymentCreate(ip))return json(res,429,{error:'Too many payment attempts. Please wait a minute and try again.'});
       const b=await body(req);
       if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
       let c;try{c=await calc(b.items)}catch(e){return json(res,400,{error:e.message})}
