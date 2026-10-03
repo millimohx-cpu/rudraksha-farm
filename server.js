@@ -187,7 +187,7 @@ async function api(req,res){
       if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
       let c;try{c=await calc(b.items)}catch(e){return json(res,400,{error:e.message})}
       const id=orderId(),customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');
-      const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/?cashfree_return=1&order_id={order_id}`}};
+      const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/cashfree-return?order_id={order_id}`}};
       if(PUBLIC_BASE_URL)payload.order_meta.notify_url=`${PUBLIC_BASE_URL}/api/payments/cashfree/webhook`;
       try{
         const cf=await cashfreeFetch('/orders',{method:'POST',body:JSON.stringify(payload)});
@@ -195,6 +195,30 @@ async function api(req,res){
         await saveOrder(o);
         return json(res,201,{orderId:id,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total});
       }catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}
+    }
+    if(req.method==='GET'&&p==='/cashfree-return'){
+      const id=u.searchParams.get('order_id');
+      if(!id)return json(res,400,{error:'Missing order_id'});
+      const o=await dbOrder(id);
+      if(!o)return json(res,404,{error:'Order not found'});
+      try{
+        const payments=await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfree_order_id||id)}/payments`,{method:'GET'});
+        const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');
+        const pending=Array.isArray(payments)&&payments.some(x=>x.payment_status==='PENDING');
+        if(success){
+          await markOrderPaid(id);
+        }else if(pending){
+          await pool.query("UPDATE orders SET payment_status='pending' WHERE id=$1",[id]);
+        }else{
+          await pool.query("UPDATE orders SET payment_status='failed' WHERE id=$1",[id]);
+        }
+        res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}`,'Cache-Control':'no-store'});
+        return res.end();
+      }catch(e){
+        console.error('Cashfree return verification failed:',e.message);
+        res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}&verification=error`,'Cache-Control':'no-store'});
+        return res.end();
+      }
     }
     if(req.method==='GET'&&p.startsWith('/api/payments/cashfree/status/')){
       const id=p.split('/').pop(),o=await dbOrder(id);
