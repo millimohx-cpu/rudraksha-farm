@@ -377,13 +377,14 @@ function render(){
 }
 function qty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);render()}
 function closeCart(){document.getElementById("cart").classList.remove("show")}
+async function prefillCustomer(){try{const t=localStorage.getItem("rf_customer_token");if(!t)return;const r=await fetch("/api/customer/me",{headers:{Authorization:"Bearer "+t}});if(!r.ok)return;const d=await r.json();if(d.customer){document.getElementById("customerName").value=d.customer.name||"";document.getElementById("customerPhone").value=(d.customer.phone||"").replace(/^\+91/,"");document.getElementById("customerEmail").value=d.customer.email||"";document.getElementById("customerPhone").readOnly=true;}}catch(e){console.warn("Customer prefill skipped",e)}}
 function openCheckout(){
   if(!cart.length){
     alert("Your cart is empty.");
     return;
   }
   document.getElementById("cart").classList.remove("show");
-  document.getElementById("checkout").classList.add("show");
+  document.getElementById("checkout").classList.add("show");prefillCustomer();
 }
 
 function closeCheckout(){
