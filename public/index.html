@@ -449,7 +449,8 @@ async function submitOrder(e){
         items:cart.map(x=>({
           productId:x.productId,
           quantity:x.qty
-        }))
+        })),
+        couponCode:appliedCoupon||null
       })
     });
 
