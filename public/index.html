@@ -396,10 +396,11 @@ function loadCashfree(){
   if(cashfreeLoader)return cashfreeLoader;
   cashfreeLoader=new Promise((resolve,reject)=>{
     const s=document.createElement("script");
+    const timer=setTimeout(()=>reject(new Error("Cashfree payment gateway took too long to load. Please refresh and try again.")),10000);
     s.src="https://sdk.cashfree.com/js/v3/cashfree.js";
     s.async=true;
-    s.onload=()=>resolve();
-    s.onerror=()=>reject(new Error("Unable to load secure payment gateway."));
+    s.onload=()=>{clearTimeout(timer);resolve()};
+    s.onerror=()=>{clearTimeout(timer);reject(new Error("Unable to load secure payment gateway."))};
     document.head.appendChild(s);
   });
   return cashfreeLoader;
@@ -425,7 +426,6 @@ async function submitOrder(e){
   message.textContent="Please wait...";
 
   try{
-    await loadCashfree();
     const res=await fetch("/api/payments/cashfree/order",{
       method:"POST",
       headers:{
@@ -451,6 +451,9 @@ async function submitOrder(e){
       throw new Error(out.error||"Unable to create payment");
     }
 
+    payButton.textContent="OPENING SECURE PAYMENT...";
+    await loadCashfree();
+
     const cashfree=Cashfree({
       mode:out.environment
     });
@@ -467,7 +470,7 @@ async function submitOrder(e){
     payButton.textContent="PAY SECURELY WITH CASHFREE";
   }
 }
- async function handleCashfreeReturn(){
+async function handleCashfreeReturn(){
   const params=new URLSearchParams(window.location.search);
   if(params.get("cashfree_return")!=="1")return;
   const orderId=params.get("order_id");
