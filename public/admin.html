@@ -23,7 +23,7 @@
 <section id="panel" class="hidden">
 <div class="head"><div><h2>Dashboard</h2><div class="muted">Orders and product inventory</div></div><button id="refresh" class="btn refresh">Refresh</button></div>
 <div class="card" style="margin-bottom:20px"><div class="head"><div><h2>Order tools</h2><div class="muted">Search by order ID, customer name or phone.</div></div></div><div class="filters"><input id="orderSearch" placeholder="Search order ID, customer or phone..."><select id="statusFilter"><option value="">All statuses</option><option value="received">Received</option><option value="payment_confirmed">Payment confirmed</option><option value="processing">Processing</option><option value="dispatched">Dispatched</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select><select id="paymentFilter"><option value="">All payments</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="failed">Failed</option></select></div>
-<div class="quick"><button class="btn active" id="quickAll" type="button" onclick="quickFilter('all')">All</button><button class="btn" id="quickPaid" type="button" onclick="quickFilter('paid')">Paid — Process</button><button class="btn" id="quickProcessing" type="button" onclick="quickFilter('processing')">Processing</button><button class="btn" id="quickDispatched" type="button" onclick="quickFilter('dispatched')">Dispatched</button></div></div>
+<div class="quick"><button class="btn active" id="quickAll" type="button" onclick="quickFilter('all')">All</button><button class="btn" id="quickPaid" type="button" onclick="quickFilter('paid')">Paid — Process</button><button class="btn" id="quickProcessing" type="button" onclick="quickFilter('processing')">Processing</button><button class="btn" id="quickDispatched" type="button" onclick="quickFilter('dispatched')">Dispatched</button><button class="btn alt" type="button" onclick="exportOrders(false)">⬇ Export current</button><button class="btn alt" type="button" onclick="exportOrders(true)">⬇ Export today</button></div></div>
 <div class="grid">
 <div class="card stat"><span>Total orders</span><b id="totalOrders">0</b></div>
 <div class="card stat"><span>Paid orders</span><b id="paidOrders">0</b></div>
@@ -55,6 +55,19 @@ $("refresh").onclick=load; $("crmSearch").oninput=renderCRM;
 $("orderSearch").oninput=()=>{syncQuickButtons("all");renderOrders()};$("statusFilter").onchange=()=>{syncQuickButtons("all");renderOrders()};$("paymentFilter").onchange=()=>{syncQuickButtons("all");renderOrders()};
 function quickFilter(type){$("orderSearch").value="";$("statusFilter").value="";$("paymentFilter").value="";["quickAll","quickPaid","quickProcessing","quickDispatched"].forEach(id=>$(id).classList.remove("active"));if(type==="paid")$("paymentFilter").value="paid";if(type==="processing")$("statusFilter").value="processing";if(type==="dispatched")$("statusFilter").value="dispatched";$("quick"+(type==="all"?"All":type==="paid"?"Paid":type[0].toUpperCase()+type.slice(1))).classList.add("active");renderOrders()}
 function syncQuickButtons(type){["quickAll","quickPaid","quickProcessing","quickDispatched"].forEach(id=>$(id).classList.remove("active"));$("quickAll").classList.add("active")}
+async function exportOrders(today){
+  try{
+    const q=new URLSearchParams();
+    const sf=$("statusFilter").value,pf=$("paymentFilter").value,search=$("orderSearch").value.trim();
+    if(sf)q.set("status",sf);if(pf)q.set("payment",pf);if(search)q.set("search",search);
+    if(today){const d=new Date(),iso=d.toISOString().slice(0,10);q.set("from",iso);q.set("to",iso);}
+    const r=await fetch("/api/admin/orders/export?"+q.toString(),{headers:{Authorization:"Bearer "+token}});
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.error||"Export failed");}
+    const blob=await r.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");
+    link.href=url;link.download=today?"rudraksha-orders-"+new Date().toISOString().slice(0,10)+".csv":"rudraksha-orders-export.csv";
+    document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch(err){alert(err.message)}
+}
 let allOrders=[],allProducts=[],crmCustomers=[];
 function waPhone(phone){let p=String(phone||"").replace(/\D/g,"");if(p.length===10)p="91"+p;return p;}
 function waMessage(x){return "Hello "+(x.customer?.name||"")+", your Rudraksha Farm order "+x.id+" is currently "+(x.status||"received").replaceAll("_"," ")+". Total: "+money(x.total)+". Thank you.";}
