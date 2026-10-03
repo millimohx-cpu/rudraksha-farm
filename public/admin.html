@@ -50,7 +50,7 @@ $("orderSearch").oninput=()=>{syncQuickButtons("all");renderOrders()};$("statusF
 function quickFilter(type){$("orderSearch").value="";$("statusFilter").value="";$("paymentFilter").value="";["quickAll","quickPaid","quickProcessing","quickDispatched"].forEach(id=>$(id).classList.remove("active"));if(type==="paid")$("paymentFilter").value="paid";if(type==="processing")$("statusFilter").value="processing";if(type==="dispatched")$("statusFilter").value="dispatched";$("quick"+(type==="all"?"All":type==="paid"?"Paid":type[0].toUpperCase()+type.slice(1))).classList.add("active");renderOrders()}
 function syncQuickButtons(type){["quickAll","quickPaid","quickProcessing","quickDispatched"].forEach(id=>$(id).classList.remove("active"));$("quickAll").classList.add("active")}
 let allOrders=[],allProducts=[];
-function waPhone(phone){let p=String(phone||"").replace(/\\D/g,"");if(p.length===10)p="91"+p;return p;}
+function waPhone(phone){let p=String(phone||"").replace(/\D/g,"");if(p.length===10)p="91"+p;return p;}
 function waMessage(x){return "Hello "+(x.customer?.name||"")+", your Rudraksha Farm order "+x.id+" is currently "+(x.status||"received").replaceAll("_"," ")+". Total: "+money(x.total)+". Thank you.";}
 function renderOrders(){
  const q=$("orderSearch").value.trim().toLowerCase(),sf=$("statusFilter").value,pf=$("paymentFilter").value;
