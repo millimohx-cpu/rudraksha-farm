@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rudraksha Farm — Admin</title>
+<style>
+:root{--ink:#17120e;--cream:#f4eee3;--green:#173a2b;--gold:#b68a3b;--muted:#776b5d;--line:#ddd2c2;--white:#fffaf1}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(1180px,92vw);margin:auto}.top{background:#0d0906;color:#fff;padding:18px 0}.topin{display:flex;justify-content:space-between;align-items:center;gap:15px}.brand{font-weight:700;letter-spacing:.12em}.btn{border:0;border-radius:8px;padding:11px 16px;cursor:pointer;background:var(--green);color:#fff}.btn.alt{background:#eee3d2;color:var(--ink)}.card{background:#fffaf1;border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 8px 30px rgba(40,25,10,.05)}main{padding:35px 0}.login{max-width:430px;margin:70px auto}.login h1{margin-top:0}.field{margin:14px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.field input{width:100%;padding:12px;border:1px solid #cfc3b2;border-radius:8px;background:#fff}.msg{font-size:13px;color:#9a2e20;margin-top:12px}.hidden{display:none}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:25px}.stat b{display:block;font-size:30px;margin-top:8px}.stat span{color:var(--muted);font-size:13px}.tablewrap{overflow:auto}.orders{width:100%;border-collapse:collapse;min-width:850px}.orders th,.orders td{text-align:left;padding:13px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}.orders th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}select{padding:8px;border:1px solid #cfc3b2;border-radius:7px;background:#fff}.refresh{margin-left:auto}.head{display:flex;align-items:center;gap:12px;margin-bottom:18px}.head h2{margin:0}.muted{color:var(--muted);font-size:13px}@media(max-width:700px){.grid{grid-template-columns:1fr}.topin{align-items:flex-start;flex-direction:column}.refresh{margin-left:0}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap topin"><div class="brand">RUDRAKSHA FARM · ADMIN</div><button id="logout" class="btn alt hidden">Logout</button></div></header>
+<main class="wrap">
+<section id="login" class="card login">
+<h1>Admin Login</h1><p class="muted">Manage orders and inventory securely.</p>
+<form id="loginForm">
+<div class="field"><label>Email</label><input id="email" type="email" required autocomplete="username"></div>
+<div class="field"><label>Password</label><input id="password" type="password" required autocomplete="current-password"></div>
+<button class="btn" type="submit">Sign in</button><div id="loginMsg" class="msg"></div>
+</form></section>
+
+<section id="panel" class="hidden">
+<div class="head"><div><h2>Dashboard</h2><div class="muted">Orders and product inventory</div></div><button id="refresh" class="btn refresh">Refresh</button></div>
+<div class="grid">
+<div class="card stat"><span>Total orders</span><b id="totalOrders">0</b></div>
+<div class="card stat"><span>Paid orders</span><b id="paidOrders">0</b></div>
+<div class="card stat"><span>Pending orders</span><b id="pendingOrders">0</b></div>
+</div>
+<div class="card"><div class="head"><h2>Orders</h2></div><div class="tablewrap"><table class="orders"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div>
+<div class="card" style="margin-top:20px"><div class="head"><h2>Inventory</h2></div><div class="tablewrap"><table class="orders"><thead><tr><th>Product</th><th>Pack</th><th>Price</th><th>Stock</th><th>Active</th></tr></thead><tbody id="inventoryBody"></tbody></table></div></div>
+</section>
+</main>
+<script>
+let token=localStorage.getItem("rf_admin_token")||"";
+const $=id=>document.getElementById(id);
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN");
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function showPanel(){ $("login").classList.add("hidden");$("panel").classList.remove("hidden");$("logout").classList.remove("hidden");load(); }
+function showLogin(){ $("login").classList.remove("hidden");$("panel").classList.add("hidden");$("logout").classList.add("hidden"); }
+async function api(url,options={}){options.headers={...(options.headers||{}),Authorization:"Bearer "+token};const r=await fetch(url,options);const d=await r.json().catch(()=>({}));if(r.status===401){token="";localStorage.removeItem("rf_admin_token");showLogin();throw new Error("Session expired");}if(!r.ok)throw new Error(d.error||"Request failed");return d;}
+$("loginForm").onsubmit=async e=>{e.preventDefault();$("loginMsg").textContent="Signing in...";try{const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:$("email").value,password:$("password").value})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Invalid credentials");token=d.token;localStorage.setItem("rf_admin_token",token);$("loginMsg").textContent="";showPanel();}catch(err){$("loginMsg").textContent=err.message;}};
+$("logout").onclick=()=>{token="";localStorage.removeItem("rf_admin_token");showLogin();};
+$("refresh").onclick=load;
+async function load(){try{const [o,i]=await Promise.all([api("/api/admin/orders"),api("/api/admin/inventory")]);const orders=o.orders||[];$("totalOrders").textContent=orders.length;$("paidOrders").textContent=orders.filter(x=>x.paymentStatus==="paid").length;$("pendingOrders").textContent=orders.filter(x=>x.paymentStatus==="pending").length;$("ordersBody").innerHTML=orders.slice().reverse().map(x=>"<tr><td><b>"+esc(x.id)+"</b><br><span class='muted'>"+esc(new Date(x.createdAt).toLocaleString("en-IN"))+"</span></td><td>"+esc(x.customer?.name)+"<br>"+esc(x.customer?.phone)+"<br>"+esc(x.customer?.address)+"</td><td>"+(x.items||[]).map(y=>esc(y.pack)+" × "+y.quantity).join("<br>")+"</td><td>"+money(x.total)+"</td><td>"+esc(x.paymentStatus)+"</td><td><select onchange='setStatus("+JSON.stringify(x.id)+",this.value)'>"+["received","payment_confirmed","processing","dispatched","delivered","cancelled"].map(s=>"<option "+(x.status===s?"selected":"")+" value='"+s+"'>"+s+"</option>").join("")+"</select></td></tr>").join("")||"<tr><td colspan='6'>No orders yet.</td></tr>";$("inventoryBody").innerHTML=(i.products||[]).map(x=>"<tr><td>"+esc(x.name)+"</td><td>"+esc(x.pack)+"</td><td>"+money(x.price)+"</td><td>"+(x.stock==null?"Unlimited":x.stock)+"</td><td>"+(x.active?"Yes":"No")+"</td></tr>").join("");}catch(err){alert(err.message)}}
+async function setStatus(id,status){try{await api("/api/admin/orders/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});}catch(err){alert(err.message);load();}}
+if(token)showPanel();else showLogin();
+</script>
+</body>
+</html>
