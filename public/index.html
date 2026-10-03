@@ -25,10 +25,11 @@
 {"@type":"ListItem","position":3,"item":{"@type":"Product","name":"A2 Bilona Desi Cow Ghee — 2.5 kg","image":"https://rudrakshafarm.in/product-story.jpg","description":"A2 Bilona Desi Cow Ghee, hand-churned using the traditional Bilona method from Gir cow milk at Rudraksha Farm, Barmer, Rajasthan.","brand":{"@type":"Brand","name":"Rudraksha Farm"},"offers":{"@type":"Offer","url":"https://rudrakshafarm.in/","priceCurrency":"INR","price":"4999","availability":"https://schema.org/InStock","itemCondition":"https://schema.org/NewCondition","shippingDetails":{"@type":"OfferShippingDetails","hasShippingService":{"@id":"https://rudrakshafarm.in/#shipping-service"}},"hasMerchantReturnPolicy":{"@id":"https://rudrakshafarm.in/#return-policy"}}}}
 ]}
 </script>
+<link rel="preload" as="image" href="hero.jpg" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
  <style>
 .brand-logo-wrap{display:flex;align-items:center;justify-content:center;width:72px;height:72px;overflow:hidden;border-radius:50%;flex:none;background:#fff}.brand-logo{width:72px;height:72px;display:block;object-fit:contain;object-position:center}
 @media(max-width:900px){.brand-logo-wrap{width:62px;height:62px}.brand-logo{width:62px;height:62px}}
@@ -147,7 +148,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 </div>
 
 <section class="hero" id="home">
- <img src="hero.jpg" alt="Rudraksha Farm ghee">
+ <img src="hero.jpg" alt="Rudraksha Farm ghee" fetchpriority="high" decoding="async">
  <div class="hero-copy">
   <div class="kicker">A2 Bilona · Desi Cow Ghee</div>
   <h1><span>Rudraksha</span></h1>
@@ -179,9 +180,9 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
    <p class="body">Three sizes. One traditional process. Select a jar for everyday cooking, family use or stocking the pantry.</p>
   </div>
   <div class="products">
-  <article class="product"><div class="product-photo"><img src="product-500.jpg" alt="500 ml Rudraksha ghee"></div><div class="product-body"><div class="number">01 / 500 ML</div><h3>A2 Bilona Desi Cow Ghee</h3><p>Traditional hand-churned ghee from our farm's process.</p><div class="product-bottom"><div class="price">₹999</div><button class="add" onclick="add('500 ML A2 Bilona Ghee',999,'product-500.jpg','ghee-500')">Add to cart</button></div></div></article>
-  <article class="product"><div class="product-photo"><img src="product-lifestyle.jpg" alt="1 kg Rudraksha ghee"></div><div class="product-body"><div class="number">02 / 1 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>The everyday family jar, crafted with the same traditional method.</p><div class="product-bottom"><div class="price">₹1,999</div><button class="add" onclick="add('1 KG A2 Bilona Ghee',1999,'product-lifestyle.jpg','ghee-1000')">Add to cart</button></div></div></article>
-  <article class="product"><div class="product-photo"><img src="product-story.jpg" alt="2.5 kg Rudraksha ghee"></div><div class="product-body"><div class="number">03 / 2.5 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>A larger pantry jar for households that choose ghee regularly.</p><div class="product-bottom"><div class="price">₹4,999</div><button class="add" onclick="add('2.5 KG A2 Bilona Ghee',4999,'product-story.jpg','ghee-2500')">Add to cart</button></div></div></article>
+  <article class="product"><div class="product-photo"><img src="product-500.jpg" alt="500 ml Rudraksha ghee" loading="lazy" decoding="async"></div><div class="product-body"><div class="number">01 / 500 ML</div><h3>A2 Bilona Desi Cow Ghee</h3><p>Traditional hand-churned ghee from our farm's process.</p><div class="product-bottom"><div class="price">₹999</div><button class="add" onclick="add('500 ML A2 Bilona Ghee',999,'product-500.jpg','ghee-500')">Add to cart</button></div></div></article>
+  <article class="product"><div class="product-photo"><img src="product-lifestyle.jpg" alt="1 kg Rudraksha ghee" loading="lazy" decoding="async"></div><div class="product-body"><div class="number">02 / 1 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>The everyday family jar, crafted with the same traditional method.</p><div class="product-bottom"><div class="price">₹1,999</div><button class="add" onclick="add('1 KG A2 Bilona Ghee',1999,'product-lifestyle.jpg','ghee-1000')">Add to cart</button></div></div></article>
+  <article class="product"><div class="product-photo"><img src="product-story.jpg" alt="2.5 kg Rudraksha ghee" loading="lazy" decoding="async"></div><div class="product-body"><div class="number">03 / 2.5 KG</div><h3>A2 Bilona Desi Cow Ghee</h3><p>A larger pantry jar for households that choose ghee regularly.</p><div class="product-bottom"><div class="price">₹4,999</div><button class="add" onclick="add('2.5 KG A2 Bilona Ghee',4999,'product-story.jpg','ghee-2500')">Add to cart</button></div></div></article>
   </div>
 
 <section class="process" id="process">
@@ -195,13 +196,13 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
     <div class="step"><div class="stepno">05</div><div><h4>Clarify · Filter · Pack</h4><p>The makkhan is processed into ghee, then filtered and packed into jars.</p></div></div>
    </div>
   </div>
-  <div class="processphoto"><img src="process-bilona.jpg" alt="Traditional Bilona process"></div>
+  <div class="processphoto"><img src="process-bilona.jpg" alt="Traditional Bilona process" loading="lazy" decoding="async"></div>
  </div>
 </section>
 
 <section class="farm">
  <div class="container farmgrid">
-  <div class="farmphoto"><img src="farm-cow.jpg" alt="Cows at Rudraksha Farm"><div class="farmcaption">Barmer · Rajasthan</div></div>
+  <div class="farmphoto"><img src="farm-cow.jpg" alt="Cows at Rudraksha Farm" loading="lazy" decoding="async"><div class="farmcaption">Barmer · Rajasthan</div></div>
   <div><div class="overline">04 / From the Farm</div><h2 class="bigtitle">Born in<br>Marwar.</h2><div class="quote">“Achha bechne par focus hai.”</div><p class="body">We started with a simple intention: give people access to ghee we would be proud to put in our own kitchens. Growth matters—but the product comes first.</p><p class="body">Rudraksha Farm is our attempt to build a modern dairy brand without losing the visual warmth and patience of traditional Indian food culture.</p></div>
  </div>
 </section>
@@ -220,7 +221,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 <section class="texture">
  <div class="container">
   <div class="overline">06 / The Natural Texture</div><h2 class="bigtitle">Same ghee.<br>Different temperatures.</h2><p class="body">Ghee can naturally move between liquid, grainy, creamy and firm textures as temperature changes.</p>
-  <div class="texturegrid"><div class="texturecard"><img src="texture.jpg" alt="Ghee texture across temperatures"><div class="texturetext"><b>Liquid · Grainy · Creamy · Firm</b><span>Natural texture variation</span></div></div><div class="texturecard"><img src="grainy.jpg" alt="Grainy ghee"><div class="texturetext"><b>Daane-daar texture</b><span>Natural crystallisation as ghee cools</span></div></div></div>
+  <div class="texturegrid"><div class="texturecard"><img src="texture.jpg" alt="Ghee texture across temperatures" loading="lazy" decoding="async"><div class="texturetext"><b>Liquid · Grainy · Creamy · Firm</b><span>Natural texture variation</span></div></div><div class="texturecard"><img src="grainy.jpg" alt="Grainy ghee" loading="lazy" decoding="async"><div class="texturetext"><b>Daane-daar texture</b><span>Natural crystallisation as ghee cools</span></div></div></div>
  </div>
 </section>
 
@@ -366,6 +367,20 @@ function closeCheckout(){
   document.getElementById("checkout").classList.remove("show");
 }
 
+let cashfreeLoader=null;
+function loadCashfree(){
+  if(window.Cashfree)return Promise.resolve();
+  if(cashfreeLoader)return cashfreeLoader;
+  cashfreeLoader=new Promise((resolve,reject)=>{
+    const s=document.createElement("script");
+    s.src="https://sdk.cashfree.com/js/v3/cashfree.js";
+    s.async=true;
+    s.onload=()=>resolve();
+    s.onerror=()=>reject(new Error("Unable to load secure payment gateway."));
+    document.head.appendChild(s);
+  });
+  return cashfreeLoader;
+}
 async function submitOrder(e){
   e.preventDefault();
 
@@ -387,6 +402,7 @@ async function submitOrder(e){
   message.textContent="Please wait...";
 
   try{
+    await loadCashfree();
     const res=await fetch("/api/payments/cashfree/order",{
       method:"POST",
       headers:{
