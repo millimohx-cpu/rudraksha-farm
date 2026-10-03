@@ -1,42 +1,255 @@
-const http=require('http'), fs=require('fs'), path=require('path'), crypto=require('crypto');
-const envFile=path.join(__dirname,'.env'); if(fs.existsSync(envFile)){for(const line of fs.readFileSync(envFile,'utf8').split(/\r?\n/)){const m=line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/); if(m&&!process.env[m[1]]) process.env[m[1]]=m[2].replace(/^\"|\"$/g,'')}}
-const PORT=Number(process.env.PORT||3000), ROOT=__dirname, DATA=path.join(ROOT,'data','store.json');
+const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto');
+const {Pool}=require('pg');
+
+const envFile=path.join(__dirname,'.env');
+if(fs.existsSync(envFile)){
+  for(const line of fs.readFileSync(envFile,'utf8').split(/\r?\n/)){
+    const m=line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if(m&&!process.env[m[1]])process.env[m[1]]=m[2].replace(/^\"|\"$/g,'');
+  }
+}
+const PORT=Number(process.env.PORT||3000);
+const ROOT=__dirname;
 const ADMIN_EMAIL=process.env.ADMIN_EMAIL||'admin@example.com';
 const ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||'CHANGE_THIS_BEFORE_DEPLOY';
 const SESSION_SECRET=process.env.SESSION_SECRET||'CHANGE_THIS_TO_A_LONG_RANDOM_SECRET';
+const DATABASE_URL=process.env.DATABASE_URL||'';
 const CASHFREE_APP_ID=process.env.CASHFREE_APP_ID||'';
 const CASHFREE_SECRET_KEY=process.env.CASHFREE_SECRET_KEY||'';
 const CASHFREE_ENV=(process.env.CASHFREE_ENV||'sandbox').toLowerCase();
 const CASHFREE_API_VERSION=process.env.CASHFREE_API_VERSION||'2025-01-01';
 const PUBLIC_BASE_URL=(process.env.PUBLIC_BASE_URL||'').replace(/\/$/,'');
 const CASHFREE_BASE_URL=CASHFREE_ENV==='production'?'https://api.cashfree.com/pg':'https://sandbox.cashfree.com/pg';
-function read(){return JSON.parse(fs.readFileSync(DATA,'utf8'))} function write(x){fs.writeFileSync(DATA,JSON.stringify(x,null,2))}
+
+if(!DATABASE_URL)console.warn('DATABASE_URL is not configured');
+
+const pool=new Pool({
+  connectionString:DATABASE_URL||undefined,
+  ssl:DATABASE_URL?{rejectUnauthorized:false}:false,
+  max:5,
+  idleTimeoutMillis:30000,
+  connectionTimeoutMillis:10000
+});
+
+async function initDb(){
+  if(!DATABASE_URL)throw Error('DATABASE_URL is not configured');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS products(
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      pack TEXT NOT NULL,
+      price INTEGER NOT NULL,
+      stock INTEGER NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE
+    );
+    CREATE TABLE IF NOT EXISTS orders(
+      id TEXT PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      customer JSONB NOT NULL,
+      items JSONB NOT NULL,
+      subtotal INTEGER NOT NULL,
+      shipping INTEGER NOT NULL,
+      total INTEGER NOT NULL,
+      payment_status TEXT NOT NULL DEFAULT 'pending',
+      status TEXT NOT NULL DEFAULT 'received',
+      cashfree_order_id TEXT,
+      cashfree_environment TEXT,
+      payment_session_id TEXT
+    );
+    CREATE TABLE IF NOT EXISTS sessions(
+      token TEXT PRIMARY KEY,
+      expires_at TIMESTAMPTZ NOT NULL
+    );
+  `);
+  const {rows}=await pool.query('SELECT COUNT(*)::int AS count FROM products');
+  if(rows[0].count===0){
+    await pool.query(
+      'INSERT INTO products(id,name,pack,price,stock,active) VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12),($13,$14,$15,$16,$17,$18)',
+      [
+        'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',999,null,true,
+        'ghee-1000','A2 Bilona Desi Cow Ghee','1 kg',1999,null,true,
+        'ghee-2500','A2 Bilona Desi Cow Ghee','2.5 kg',4999,null,true
+      ]
+    );
+  }
+}
+async function dbProducts(activeOnly=false){
+  const r=await pool.query(activeOnly?'SELECT id,name,pack,price,stock,active FROM products WHERE active=true ORDER BY price':'SELECT id,name,pack,price,stock,active FROM products ORDER BY price');
+  return r.rows;
+}
+async function dbOrder(id){
+  const r=await pool.query('SELECT * FROM orders WHERE id=$1',[id]);
+  return r.rows[0]||null;
+}
+function rowOrder(r){
+  if(!r)return null;
+  return {id:r.id,createdAt:new Date(r.created_at).toISOString(),customer:r.customer,items:r.items,subtotal:r.subtotal,shipping:r.shipping,total:r.total,paymentStatus:r.payment_status,status:r.status,cashfreeOrderId:r.cashfree_order_id||null,cashfreeEnvironment:r.cashfree_environment||null,paymentSessionId:r.payment_session_id||null};
+}
+async function saveOrder(o){
+  await pool.query(
+    `INSERT INTO orders(id,created_at,customer,items,subtotal,shipping,total,payment_status,status,cashfree_order_id,cashfree_environment,payment_session_id)
+     VALUES($1,$2,$3::jsonb,$4::jsonb,$5,$6,$7,$8,$9,$10,$11,$12)
+     ON CONFLICT(id) DO UPDATE SET customer=EXCLUDED.customer,items=EXCLUDED.items,subtotal=EXCLUDED.subtotal,shipping=EXCLUDED.shipping,total=EXCLUDED.total,payment_status=EXCLUDED.payment_status,status=EXCLUDED.status,cashfree_order_id=EXCLUDED.cashfree_order_id,cashfree_environment=EXCLUDED.cashfree_environment,payment_session_id=EXCLUDED.payment_session_id`,
+    [o.id,o.createdAt,JSON.stringify(o.customer),JSON.stringify(o.items),o.subtotal,o.shipping,o.total,o.paymentStatus,o.status,o.cashfreeOrderId||null,o.cashfreeEnvironment||null,o.paymentSessionId||null]
+  );
+}
 function json(res,status,obj){const s=JSON.stringify(obj);res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(s)}
 function body(req){return new Promise((resolve,reject)=>{let d='';req.on('data',c=>{d+=c;if(d.length>1e6)req.destroy()});req.on('end',()=>{try{resolve(d?JSON.parse(d):{})}catch(e){reject(e)}});req.on('error',reject)})}
 function token(){return crypto.randomBytes(32).toString('hex')}
-function auth(req){const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))return false;const db=read();return db.sessions.some(s=>s.token===h.slice(7)&&s.expires>Date.now())}
-function orderId(){const d=new Date().toISOString().slice(0,10).replaceAll('-','');return `RF-${d}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`}
-function requireCashfree(){if(!CASHFREE_APP_ID||!CASHFREE_SECRET_KEY)throw Error('Cashfree credentials are not configured on the server');}
-async function cashfreeFetch(endpoint,options={}){requireCashfree();const r=await fetch(CASHFREE_BASE_URL+endpoint,{...options,headers:{'x-client-id':CASHFREE_APP_ID,'x-client-secret':CASHFREE_SECRET_KEY,'x-api-version':CASHFREE_API_VERSION,'Accept':'application/json','Content-Type':'application/json',...(options.headers||{})}});const raw=await r.text();let data;try{data=raw?JSON.parse(raw):{}}catch{data={raw}}if(!r.ok){const e=new Error(data?.message||data?.error_description||`Cashfree API error (${r.status})`);e.status=r.status;e.details=data;throw e}return data;}
-function verifyWebhook(rawBody,signature,timestamp){if(!CASHFREE_SECRET_KEY||!signature||!timestamp)return false;const expected=crypto.createHmac('sha256',CASHFREE_SECRET_KEY).update(String(timestamp)+rawBody).digest('base64');const a=Buffer.from(expected),b=Buffer.from(String(signature));return a.length===b.length&&crypto.timingSafeEqual(a,b);}
-function calc(items,db){let subtotal=0;const normalized=[];for(const i of (items||[])){const p=db.products.find(x=>x.id===i.productId&&x.active);const q=Math.max(1,Math.min(99,Number(i.quantity)||1));if(!p)throw Error('Invalid product');if(Number.isInteger(p.stock)&&q>p.stock)throw Error(`Insufficient stock for ${p.pack}`);subtotal+=p.price*q;normalized.push({productId:p.id,name:p.name,pack:p.pack,unitPrice:p.price,quantity:q})}const shipping=subtotal>=1999?0:101;return {items:normalized,subtotal,shipping,total:subtotal+shipping}}
-async function api(req,res){
- const u=new URL(req.url,`http://${req.headers.host}`), p=u.pathname;
- try{
-  if(req.method==='GET'&&p==='/api/health')return json(res,200,{ok:true,service:'rudraksha-farm',time:new Date().toISOString()});
-  if(req.method==='GET'&&p==='/api/products'){const db=read();return json(res,200,{products:db.products.filter(x=>x.active).map(({id,name,pack,price,stock})=>({id,name,pack,price,available:Number.isInteger(stock)?stock>0:false}))})}
-  if(req.method==='POST'&&p==='/api/admin/login'){if(ADMIN_EMAIL==='admin@example.com'||ADMIN_PASSWORD==='CHANGE_THIS_BEFORE_DEPLOY'||SESSION_SECRET==='CHANGE_THIS_TO_A_LONG_RANDOM_SECRET')return json(res,503,{error:'Admin credentials are not configured on the server'});const b=await body(req);if(b.email!==ADMIN_EMAIL||b.password!==ADMIN_PASSWORD)return json(res,401,{error:'Invalid credentials'});const db=read(),t=token();db.sessions=db.sessions.filter(s=>s.expires>Date.now());db.sessions.push({token:t,expires:Date.now()+8*60*60*1000});write(db);return json(res,200,{token:t})}
-  if(req.method==='POST'&&p==='/api/orders'){const b=await body(req),db=read();if(!b.customer?.name||!b.customer?.phone||!b.customer?.address) return json(res,400,{error:'Customer name, phone and address are required'});let c;try{c=calc(b.items,db)}catch(e){return json(res,400,{error:e.message})}const o={id:orderId(),createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received'};db.orders.push(o);write(db);return json(res,201,{order:o})}
-  if(req.method==='POST'&&p==='/api/payments/cashfree/order'){const b=await body(req),db=read();if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});let c;try{c=calc(b.items,db)}catch(e){return json(res,400,{error:e.message})}const id=orderId();const customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/?cashfree_return=1&order_id={order_id}`}};if(PUBLIC_BASE_URL)payload.order_meta.notify_url=`${PUBLIC_BASE_URL}/api/payments/cashfree/webhook`;try{const cf=await cashfreeFetch('/orders',{method:'POST',body:JSON.stringify(payload)});const o={id,createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null};db.orders.push(o);write(db);return json(res,201,{orderId:id,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total})}catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}}
-  if(req.method==='GET'&&p.startsWith('/api/payments/cashfree/status/')){const id=p.split('/').pop(),db=read(),o=db.orders.find(x=>x.id===id);if(!o)return json(res,404,{error:'Order not found'});try{const payments=await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfreeOrderId||id)}/payments`,{method:'GET'});const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');const pending=Array.isArray(payments)&&payments.some(x=>x.payment_status==='PENDING');o.paymentStatus=success?'paid':pending?'pending':'failed';if(success)o.status='payment_confirmed';write(db);return json(res,200,{orderId:id,paymentStatus:o.paymentStatus,status:o.status,payments})}catch(e){return json(res,e.status||502,{error:e.message})}}
-  if(req.method==='POST'&&p==='/api/payments/cashfree/webhook'){const raw=await new Promise((resolve,reject)=>{let d='';req.on('data',c=>d+=c);req.on('end',()=>resolve(d));req.on('error',reject)});const sig=req.headers['x-webhook-signature'],ts=req.headers['x-webhook-timestamp'];if(!verifyWebhook(raw,sig,ts))return json(res,401,{error:'Invalid webhook signature'});let event;try{event=JSON.parse(raw)}catch{return json(res,400,{error:'Invalid JSON'})}const orderIdValue=event?.data?.order?.order_id||event?.data?.order_id||event?.order_id;const paymentStatus=event?.data?.payment?.payment_status||event?.data?.payment_status;const db=read(),o=db.orders.find(x=>x.id===orderIdValue);if(o){if(paymentStatus==='SUCCESS'){o.paymentStatus='paid';o.status='payment_confirmed'}else if(paymentStatus==='PENDING')o.paymentStatus='pending';else if(paymentStatus==='FAILED')o.paymentStatus='failed';write(db)}return json(res,200,{ok:true})}
-  if(req.method==='GET'&&p.startsWith('/api/orders/')){const id=p.split('/').pop(),db=read(),o=db.orders.find(x=>x.id===id);if(!o)return json(res,404,{error:'Order not found'});return json(res,200,{order:{id:o.id,createdAt:o.createdAt,items:o.items,total:o.total,paymentStatus:o.paymentStatus,status:o.status}})}
-  if(req.method==='GET'&&p==='/api/admin/orders'){if(!auth(req))return json(res,401,{error:'Unauthorized'});return json(res,200,{orders:read().orders})}
-  if(req.method==='PATCH'&&p.startsWith('/api/admin/orders/')){if(!auth(req))return json(res,401,{error:'Unauthorized'});const id=p.split('/').pop(),b=await body(req),db=read(),o=db.orders.find(x=>x.id===id);if(!o)return json(res,404,{error:'Order not found'});const allowed=['received','payment_confirmed','processing','dispatched','delivered','cancelled'];if(b.status&&!allowed.includes(b.status))return json(res,400,{error:'Invalid status'});if(b.status)o.status=b.status;if(b.paymentStatus)o.paymentStatus=b.paymentStatus;write(db);return json(res,200,{order:o})}
-  if(req.method==='GET'&&p==='/api/admin/inventory'){if(!auth(req))return json(res,401,{error:'Unauthorized'});return json(res,200,{products:read().products})}
-  if(req.method==='PATCH'&&p.startsWith('/api/admin/products/')){if(!auth(req))return json(res,401,{error:'Unauthorized'});const id=p.split('/').pop(),b=await body(req),db=read(),x=db.products.find(v=>v.id===id);if(!x)return json(res,404,{error:'Product not found'});for(const k of ['price','stock','active','name','pack'])if(b[k]!==undefined)x[k]=b[k];write(db);return json(res,200,{product:x})}
-  return null;
- }catch(e){return json(res,500,{error:'Server error'})}
+async function auth(req){
+  const h=req.headers.authorization||'';
+  if(!h.startsWith('Bearer '))return false;
+  const r=await pool.query('SELECT token FROM sessions WHERE token=$1 AND expires_at>NOW()',[h.slice(7)]);
+  return r.rowCount>0;
 }
-function serve(req,res){let f=req.url==='/'?'/index.html':req.url.split('?')[0];let file=path.normalize(path.join(ROOT,'public',f));if(!file.startsWith(path.join(ROOT,'public')))return json(res,403,{error:'Forbidden'});if(!fs.existsSync(file)||fs.statSync(file).isDirectory())return json(res,404,{error:'Not found'});const ext=path.extname(file),types={'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml'};res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream'});fs.createReadStream(file).pipe(res)}
-const server=http.createServer(async(req,res)=>{if(req.url.startsWith('/api/')){const r=await api(req,res);if(r===null)json(res,404,{error:'API route not found'})}else serve(req,res)});server.listen(PORT,()=>console.log(`Rudraksha Farm running on http://localhost:${PORT}`));
+function orderId(){const d=new Date().toISOString().slice(0,10).replaceAll('-','');return `RF-${d}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`}
+function requireCashfree(){if(!CASHFREE_APP_ID||!CASHFREE_SECRET_KEY)throw Error('Cashfree credentials are not configured on the server')}
+async function cashfreeFetch(endpoint,options={}){
+  requireCashfree();
+  const r=await fetch(CASHFREE_BASE_URL+endpoint,{...options,headers:{'x-client-id':CASHFREE_APP_ID,'x-client-secret':CASHFREE_SECRET_KEY,'x-api-version':CASHFREE_API_VERSION,'Accept':'application/json','Content-Type':'application/json',...(options.headers||{})}});
+  const raw=await r.text();let data;try{data=raw?JSON.parse(raw):{}}catch{data={raw}}
+  if(!r.ok){const e=new Error(data?.message||data?.error_description||`Cashfree API error (${r.status})`);e.status=r.status;e.details=data;throw e}
+  return data;
+}
+function verifyWebhook(rawBody,signature,timestamp){
+  if(!CASHFREE_SECRET_KEY||!signature||!timestamp)return false;
+  const expected=crypto.createHmac('sha256',CASHFREE_SECRET_KEY).update(String(timestamp)+rawBody).digest('base64');
+  const a=Buffer.from(expected),b=Buffer.from(String(signature));
+  return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+async function calc(items){
+  const products=await dbProducts(true);
+  let subtotal=0;const normalized=[];
+  for(const i of (items||[])){
+    const p=products.find(x=>x.id===i.productId);
+    const q=Math.max(1,Math.min(99,Number(i.quantity)||1));
+    if(!p)throw Error('Invalid product');
+    if(Number.isInteger(p.stock)&&q>p.stock)throw Error(`Insufficient stock for ${p.pack}`);
+    subtotal+=p.price*q;
+    normalized.push({productId:p.id,name:p.name,pack:p.pack,unitPrice:p.price,quantity:q});
+  }
+  if(!normalized.length)throw Error('Cart is empty');
+  const shipping=subtotal>=1999?0:101;
+  return {items:normalized,subtotal,shipping,total:subtotal+shipping};
+}
+async function api(req,res){
+  const u=new URL(req.url,`http://${req.headers.host}`),p=u.pathname;
+  try{
+    if(req.method==='GET'&&p==='/api/health')return json(res,200,{ok:true,service:'rudraksha-farm',database:Boolean(DATABASE_URL),time:new Date().toISOString()});
+    if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>({id,name,pack,price,available:Number.isInteger(stock)?stock>0:false}))});
+    if(req.method==='POST'&&p==='/api/admin/login'){
+      if(ADMIN_EMAIL==='admin@example.com'||ADMIN_PASSWORD==='CHANGE_THIS_BEFORE_DEPLOY'||SESSION_SECRET==='CHANGE_THIS_TO_A_LONG_RANDOM_SECRET')return json(res,503,{error:'Admin credentials are not configured on the server'});
+      const b=await body(req);
+      if(b.email!==ADMIN_EMAIL||b.password!==ADMIN_PASSWORD)return json(res,401,{error:'Invalid credentials'});
+      const t=token();
+      await pool.query('DELETE FROM sessions WHERE expires_at<=NOW()');
+      await pool.query('INSERT INTO sessions(token,expires_at) VALUES($1,NOW()+INTERVAL \'8 hours\')',[t]);
+      return json(res,200,{token:t});
+    }
+    if(req.method==='POST'&&p==='/api/orders'){
+      const b=await body(req);
+      if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
+      let c;try{c=await calc(b.items)}catch(e){return json(res,400,{error:e.message})}
+      const o={id:orderId(),createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received'};
+      await saveOrder(o);return json(res,201,{order:o});
+    }
+    if(req.method==='POST'&&p==='/api/payments/cashfree/order'){
+      const b=await body(req);
+      if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
+      let c;try{c=await calc(b.items)}catch(e){return json(res,400,{error:e.message})}
+      const id=orderId(),customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');
+      const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/?cashfree_return=1&order_id={order_id}`}};
+      if(PUBLIC_BASE_URL)payload.order_meta.notify_url=`${PUBLIC_BASE_URL}/api/payments/cashfree/webhook`;
+      try{
+        const cf=await cashfreeFetch('/orders',{method:'POST',body:JSON.stringify(payload)});
+        const o={id,createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null};
+        await saveOrder(o);
+        return json(res,201,{orderId:id,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total});
+      }catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}
+    }
+    if(req.method==='GET'&&p.startsWith('/api/payments/cashfree/status/')){
+      const id=p.split('/').pop(),o=await dbOrder(id);
+      if(!o)return json(res,404,{error:'Order not found'});
+      try{
+        const payments=await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfree_order_id||id)}/payments`,{method:'GET'});
+        const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');
+        const pending=Array.isArray(payments)&&payments.some(x=>x.payment_status==='PENDING');
+        const paymentStatus=success?'paid':pending?'pending':'failed';
+        const status=success?'payment_confirmed':o.status;
+        await pool.query('UPDATE orders SET payment_status=$1,status=$2 WHERE id=$3',[paymentStatus,status,id]);
+        return json(res,200,{orderId:id,paymentStatus,status,payments});
+      }catch(e){return json(res,e.status||502,{error:e.message})}
+    }
+    if(req.method==='POST'&&p==='/api/payments/cashfree/webhook'){
+      const raw=await new Promise((resolve,reject)=>{let d='';req.on('data',c=>d+=c);req.on('end',()=>resolve(d));req.on('error',reject)});
+      const sig=req.headers['x-webhook-signature'],ts=req.headers['x-webhook-timestamp'];
+      if(!verifyWebhook(raw,sig,ts))return json(res,401,{error:'Invalid webhook signature'});
+      let event;try{event=JSON.parse(raw)}catch{return json(res,400,{error:'Invalid JSON'})}
+      const orderIdValue=event?.data?.order?.order_id||event?.data?.order_id||event?.order_id;
+      const paymentStatus=event?.data?.payment?.payment_status||event?.data?.payment_status;
+      if(orderIdValue){
+        if(paymentStatus==='SUCCESS')await pool.query("UPDATE orders SET payment_status='paid',status='payment_confirmed' WHERE id=$1",[orderIdValue]);
+        else if(paymentStatus==='PENDING')await pool.query("UPDATE orders SET payment_status='pending' WHERE id=$1",[orderIdValue]);
+        else if(paymentStatus==='FAILED')await pool.query("UPDATE orders SET payment_status='failed' WHERE id=$1",[orderIdValue]);
+      }
+      return json(res,200,{ok:true});
+    }
+    if(req.method==='GET'&&p.startsWith('/api/orders/')){
+      const id=p.split('/').pop(),r=await pool.query('SELECT id,created_at,items,total,payment_status,status FROM orders WHERE id=$1',[id]);
+      if(!r.rowCount)return json(res,404,{error:'Order not found'});
+      const o=r.rows[0];
+      return json(res,200,{order:{id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status}});
+    }
+    if(req.method==='GET'&&p==='/api/admin/orders'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const r=await pool.query('SELECT * FROM orders ORDER BY created_at ASC');
+      return json(res,200,{orders:r.rows.map(rowOrder)});
+    }
+    if(req.method==='PATCH'&&p.startsWith('/api/admin/orders/')){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const id=p.split('/').pop(),b=await body(req),o=await dbOrder(id);
+      if(!o)return json(res,404,{error:'Order not found'});
+      const allowed=['received','payment_confirmed','processing','dispatched','delivered','cancelled'];
+      if(b.status&&!allowed.includes(b.status))return json(res,400,{error:'Invalid status'});
+      if(b.status)await pool.query('UPDATE orders SET status=$1 WHERE id=$2',[b.status,id]);
+      if(b.paymentStatus)await pool.query('UPDATE orders SET payment_status=$1 WHERE id=$2',[b.paymentStatus,id]);
+      return json(res,200,{order:rowOrder(await dbOrder(id))});
+    }
+    if(req.method==='GET'&&p==='/api/admin/inventory'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      return json(res,200,{products:await dbProducts(false)});
+    }
+    if(req.method==='PATCH'&&p.startsWith('/api/admin/products/')){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const id=p.split('/').pop(),b=await body(req),r=await pool.query('SELECT * FROM products WHERE id=$1',[id]);
+      if(!r.rowCount)return json(res,404,{error:'Product not found'});
+      const allowed=['price','stock','active','name','pack'];
+      const sets=[],vals=[];
+      for(const k of allowed)if(b[k]!==undefined){sets.push(`${k}=$${vals.length+1}`);vals.push(b[k])}
+      if(sets.length)await pool.query(`UPDATE products SET ${sets.join(',')} WHERE id=$${vals.length+1}`,[...vals,id]);
+      const out=await pool.query('SELECT * FROM products WHERE id=$1',[id]);
+      return json(res,200,{product:out.rows[0]});
+    }
+    return null;
+  }catch(e){
+    console.error(e);
+    return json(res,500,{error:'Server error'});
+  }
+}
+function serve(req,res){
+  let f=req.url==='/'?'/index.html':req.url.split('?')[0];
+  const file=path.normalize(path.join(ROOT,'public',f));
+  if(!file.startsWith(path.join(ROOT,'public')))return json(res,403,{error:'Forbidden'});
+  if(!fs.existsSync(file)||fs.statSync(file).isDirectory())return json(res,404,{error:'Not found'});
+  const ext=path.extname(file),types={'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml'};
+  res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream'});fs.createReadStream(file).pipe(res);
+}
+const server=http.createServer(async(req,res)=>{
+  if(req.url.startsWith('/api/')){const r=await api(req,res);if(r===null)json(res,404,{error:'API route not found'})}
+  else serve(req,res);
+});
+async function start(){
+  await initDb();
+  server.listen(PORT,()=>console.log(`Rudraksha Farm running on http://localhost:${PORT}`));
+}
+start().catch(e=>{console.error('Startup failed:',e);process.exit(1)});
