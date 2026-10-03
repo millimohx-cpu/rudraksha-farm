@@ -369,13 +369,13 @@ async function api(req,res){
       if(!allowPaymentCreate(ip))return json(res,429,{error:'Too many payment attempts. Please wait a minute and try again.'});
       const b=await body(req);
       if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
-      let c;try{c=await calc(b.items)}catch(e){return json(res,400,{error:e.message})}
+      let c;try{c=await calc(b.items,b.couponCode)}catch(e){return json(res,400,{error:e.message})}
       const id=orderId(),accessToken=token(),customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');
       const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/cashfree-return?order_id={order_id}&access_token=${accessToken}`}};
       if(PUBLIC_BASE_URL)payload.order_meta.notify_url=`${PUBLIC_BASE_URL}/api/payments/cashfree/webhook`;
       try{
         const cf=await cashfreeFetch('/orders',{method:'POST',body:JSON.stringify(payload)});
-        const o={id,createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null,orderAccessToken:accessToken};
+        const o={id,createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,discount:c.discount||0,couponCode:c.couponCode||null,total:c.total,paymentStatus:'pending',status:'received',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null,orderAccessToken:accessToken};
         await saveOrder(o);
         return json(res,201,{orderId:id,accessToken,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total});
       }catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}
