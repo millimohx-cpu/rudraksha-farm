@@ -510,13 +510,15 @@ async function api(req,res){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
       const id=p.split('/').pop(),b=await body(req),r=await pool.query('SELECT * FROM products WHERE id=$1',[id]);
       if(!r.rowCount)return json(res,404,{error:'Product not found'});
-      const allowed=['price','stock','active','name','pack'];
       const sets=[],vals=[];
-      for(const k of allowed)if(b[k]!==undefined){sets.push(`${k}=${vals.length+1}`);vals.push(k==='stock'&&b[k]!==null?Math.max(0,Math.floor(Number(b[k])||0)):b[k])}
-      if(b.stock!==undefined&&b.stock!==null&&Number(b.stock)<=0){sets.push('active=FALSE')}
-      if(sets.length)await pool.query(`UPDATE products SET ${sets.join(',')} WHERE id=$${vals.length+1}`,[...vals,id]);
-      const out=await pool.query('SELECT * FROM products WHERE id=$1',[id]);
-      return json(res,200,{product:out.rows[0]});
+      if(b.name!==undefined){const v=String(b.name).trim();if(!v)return json(res,400,{error:'Product name is required'});sets.push('name=$'+(vals.length+1));vals.push(v)}
+      if(b.pack!==undefined){const v=String(b.pack).trim();if(!v)return json(res,400,{error:'Pack is required'});sets.push('pack=$'+(vals.length+1));vals.push(v)}
+      if(b.price!==undefined){const v=Number(b.price);if(!Number.isFinite(v)||v<0)return json(res,400,{error:'Invalid price'});sets.push('price=$'+(vals.length+1));vals.push(v)}
+      if(b.stock!==undefined){const v=b.stock===null?null:Number(b.stock);if(v!==null&&(!Number.isFinite(v)||v<0))return json(res,400,{error:'Invalid stock'});const n=v===null?null:Math.floor(v);sets.push('stock=$'+(vals.length+1));vals.push(n);if(n===0)sets.push('active=false')}
+      if(b.active!==undefined&&!(b.stock!==undefined&&Number(b.stock)===0)){sets.push('active=$'+(vals.length+1));vals.push(!!b.active)}
+      if(!sets.length)return json(res,400,{error:'No changes'});
+      const nr=await pool.query('UPDATE products SET '+sets.join(',')+' WHERE id=$'+(vals.length+1)+' RETURNING *',[...vals,id]);
+      return json(res,200,{product:nr.rows[0]});
     }
     return null;
   }catch(e){
