@@ -54,7 +54,8 @@ async function initDb(){
       status TEXT NOT NULL DEFAULT 'received',
       cashfree_order_id TEXT,
       cashfree_environment TEXT,
-      payment_session_id TEXT
+      payment_session_id TEXT,
+      inventory_deducted BOOLEAN NOT NULL DEFAULT FALSE
     );
     CREATE TABLE IF NOT EXISTS sessions(
       token TEXT PRIMARY KEY,
@@ -72,6 +73,32 @@ async function initDb(){
       ]
     );
   }
+}
+async function markOrderPaid(id){
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const r=await client.query('SELECT * FROM orders WHERE id=$1 FOR UPDATE',[id]);
+    if(!r.rowCount){await client.query('ROLLBACK');return false;}
+    const o=r.rows[0];
+    if(!o.inventory_deducted){
+      for(const item of (o.items||[])){
+        const q=Number(item.quantity)||0;
+        if(q>0){
+          const u=await client.query('UPDATE products SET stock=stock-$1 WHERE id=$2 AND stock IS NOT NULL AND stock >= $1',[q,item.productId]);
+          if(u.rowCount===0){
+            const p=await client.query('SELECT stock,pack FROM products WHERE id=$1',[item.productId]);
+            if(p.rowCount && p.rows[0].stock!==null)throw Error('Insufficient stock for '+p.rows[0].pack);
+          }
+        }
+      }
+      await client.query("UPDATE orders SET inventory_deducted=TRUE,payment_status='paid',status='payment_confirmed' WHERE id=$1",[id]);
+    }else{
+      await client.query("UPDATE orders SET payment_status='paid',status='payment_confirmed' WHERE id=$1",[id]);
+    }
+    await client.query('COMMIT');return true;
+  }catch(e){await client.query('ROLLBACK');throw e}
+  finally{client.release()}
 }
 async function dbProducts(activeOnly=false){
   const r=await pool.query(activeOnly?'SELECT id,name,pack,price,stock,active FROM products WHERE active=true ORDER BY price':'SELECT id,name,pack,price,stock,active FROM products ORDER BY price');
@@ -176,8 +203,13 @@ async function api(req,res){
         const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');
         const pending=Array.isArray(payments)&&payments.some(x=>x.payment_status==='PENDING');
         const paymentStatus=success?'paid':pending?'pending':'failed';
-        const status=success?'payment_confirmed':o.status;
-        await pool.query('UPDATE orders SET payment_status=$1,status=$2 WHERE id=$3',[paymentStatus,status,id]);
+        if(success){
+          try{await markOrderPaid(id);}
+          catch(e){return json(res,409,{error:e.message||'Unable to confirm payment because inventory is unavailable'});}
+        }else{
+          const status=o.status;
+          await pool.query('UPDATE orders SET payment_status=$1,status=$2 WHERE id=$3',[paymentStatus,status,id]);
+        }
         return json(res,200,{orderId:id,paymentStatus,status,payments});
       }catch(e){return json(res,e.status||502,{error:e.message})}
     }
@@ -189,7 +221,9 @@ async function api(req,res){
       const orderIdValue=event?.data?.order?.order_id||event?.data?.order_id||event?.order_id;
       const paymentStatus=event?.data?.payment?.payment_status||event?.data?.payment_status;
       if(orderIdValue){
-        if(paymentStatus==='SUCCESS')await pool.query("UPDATE orders SET payment_status='paid',status='payment_confirmed' WHERE id=$1",[orderIdValue]);
+        if(paymentStatus==='SUCCESS'){
+          try{await markOrderPaid(orderIdValue);}catch(e){console.error('Inventory deduction after webhook failed:',e.message);}
+        }
         else if(paymentStatus==='PENDING')await pool.query("UPDATE orders SET payment_status='pending' WHERE id=$1",[orderIdValue]);
         else if(paymentStatus==='FAILED')await pool.query("UPDATE orders SET payment_status='failed' WHERE id=$1",[orderIdValue]);
       }
