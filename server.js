@@ -154,14 +154,14 @@ async function dbOrder(id){
 }
 function rowOrder(r){
   if(!r)return null;
-  return {id:r.id,createdAt:new Date(r.created_at).toISOString(),customer:r.customer,items:r.items,subtotal:r.subtotal,shipping:r.shipping,total:r.total,paymentStatus:r.payment_status,status:r.status,cashfreeOrderId:r.cashfree_order_id||null,cashfreeEnvironment:r.cashfree_environment||null,paymentSessionId:r.payment_session_id||null,accessToken:r.order_access_token||null,courier:r.courier||null,trackingNumber:r.tracking_number||null,dispatchedAt:r.dispatched_at?new Date(r.dispatched_at).toISOString():null};
+  return {id:r.id,createdAt:new Date(r.created_at).toISOString(),customer:r.customer,items:r.items,subtotal:r.subtotal,shipping:r.shipping,discount:r.discount||0,couponCode:r.coupon_code||null,total:r.total,paymentStatus:r.payment_status,status:r.status,cashfreeOrderId:r.cashfree_order_id||null,cashfreeEnvironment:r.cashfree_environment||null,paymentSessionId:r.payment_session_id||null,accessToken:r.order_access_token||null,courier:r.courier||null,trackingNumber:r.tracking_number||null,dispatchedAt:r.dispatched_at?new Date(r.dispatched_at).toISOString():null};
 }
 async function saveOrder(o){
   await pool.query(
-    `INSERT INTO orders(id,created_at,customer,items,subtotal,shipping,total,payment_status,status,cashfree_order_id,cashfree_environment,payment_session_id,order_access_token)
-     VALUES($1,$2,$3::jsonb,$4::jsonb,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+    `INSERT INTO orders(id,created_at,customer,items,subtotal,shipping,discount,coupon_code,total,payment_status,status,cashfree_order_id,cashfree_environment,payment_session_id,order_access_token)
+     VALUES($1,$2,$3::jsonb,$4::jsonb,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      ON CONFLICT(id) DO UPDATE SET customer=EXCLUDED.customer,items=EXCLUDED.items,subtotal=EXCLUDED.subtotal,shipping=EXCLUDED.shipping,total=EXCLUDED.total,payment_status=EXCLUDED.payment_status,status=EXCLUDED.status,cashfree_order_id=EXCLUDED.cashfree_order_id,cashfree_environment=EXCLUDED.cashfree_environment,payment_session_id=EXCLUDED.payment_session_id`,
-    [o.id,o.createdAt,JSON.stringify(o.customer),JSON.stringify(o.items),o.subtotal,o.shipping,o.total,o.paymentStatus,o.status,o.cashfreeOrderId||null,o.cashfreeEnvironment||null,o.paymentSessionId||null,o.orderAccessToken||token()]
+    [o.id,o.createdAt,JSON.stringify(o.customer),JSON.stringify(o.items),o.subtotal,o.shipping,o.discount||0,o.couponCode||null,o.total,o.paymentStatus,o.status,o.cashfreeOrderId||null,o.cashfreeEnvironment||null,o.paymentSessionId||null,o.orderAccessToken||token()]
   );
 }
 function json(res,status,obj){const s=JSON.stringify(obj);res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(s)}
