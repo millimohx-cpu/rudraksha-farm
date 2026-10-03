@@ -218,6 +218,32 @@ async function api(req,res){
     if(req.method==='POST'&&p==='/api/customer/register-or-login'){
       return json(res,410,{error:'OTP login has been removed. Use password login.'});
     }
+    if(req.method==='GET'&&p==='/api/customer/me'){
+      const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
+      const r=await pool.query('SELECT phone,name,email FROM customers WHERE phone=$1',[phone]);
+      return json(res,200,{customer:r.rows[0]||{phone,name:null,email:null}});
+    }
+    if(req.method==='PATCH'&&p==='/api/customer/profile'){
+      const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
+      const b=await body(req),name=String(b.name||'').trim(),email=String(b.email||'').trim().toLowerCase();
+      if(name.length<2)return json(res,400,{error:'Name is required'});
+      if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(res,400,{error:'Enter a valid email address'});
+      await pool.query('UPDATE customers SET name=$1,email=$2 WHERE phone=$3',[name,email||null,phone]);
+      return json(res,200,{ok:true});
+    }
+    if(req.method==='POST'&&p==='/api/customer/change-password'){
+      const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
+      const b=await body(req),current=String(b.currentPassword||''),next=String(b.newPassword||'');
+      if(next.length<8)return json(res,400,{error:'New password must be at least 8 characters'});
+      const r=await pool.query('SELECT password_hash FROM customers WHERE phone=$1',[phone]);
+      if(!r.rowCount||!r.rows[0].password_hash)return json(res,400,{error:'Password account not found'});
+      const oldHash=await new Promise((resolve,reject)=>crypto.scrypt(current,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
+      const a=Buffer.from(oldHash,'hex'),bhash=Buffer.from(r.rows[0].password_hash,'hex');
+      if(a.length!==bhash.length||!crypto.timingSafeEqual(a,bhash))return json(res,401,{error:'Current password is incorrect'});
+      const newHash=await new Promise((resolve,reject)=>crypto.scrypt(next,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
+      await pool.query('UPDATE customers SET password_hash=$1 WHERE phone=$2',[newHash,phone]);
+      return json(res,200,{ok:true});
+    }
     if(req.method==='POST'&&p==='/api/admin/login'){
       if(ADMIN_EMAIL==='admin@example.com'||ADMIN_PASSWORD==='CHANGE_THIS_BEFORE_DEPLOY'||SESSION_SECRET==='CHANGE_THIS_TO_A_LONG_RANDOM_SECRET')return json(res,503,{error:'Admin credentials are not configured on the server'});
       const b=await body(req);
