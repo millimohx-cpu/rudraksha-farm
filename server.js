@@ -238,7 +238,8 @@ async function api(req,res){
   }
 }
 function serve(req,res){
-  let f=req.url==='/'?'/index.html':req.url.split('?')[0];
+  const requestPath=req.url.split('?')[0];
+  let f=requestPath==='/'?'/index.html':requestPath;
   const file=path.normalize(path.join(ROOT,'public',f));
   if(!file.startsWith(path.join(ROOT,'public')))return json(res,403,{error:'Forbidden'});
   if(!fs.existsSync(file)||fs.statSync(file).isDirectory())return json(res,404,{error:'Not found'});
