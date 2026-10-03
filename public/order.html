@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rudraksha Farm — Order Status</title>
+<style>
+:root{--ink:#17120e;--cream:#f4eee3;--green:#173a2b;--gold:#b68a3b;--muted:#776b5d;--line:#ddd2c2;--white:#fffaf1}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}.wrap{width:min(760px,92vw);margin:auto}.top{background:#0d0906;color:#fff;padding:22px 0}.brand{font-weight:700;letter-spacing:.12em}.hero{text-align:center;padding:55px 0 25px}.hero h1{font-family:Georgia,serif;font-size:42px;margin:8px 0}.hero p{color:var(--muted);margin:0}.card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 8px 30px rgba(40,25,10,.06);margin:18px 0}.status{display:flex;align-items:center;gap:14px}.dot{width:14px;height:14px;border-radius:50%;background:var(--green);flex:0 0 auto}.label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.value{font-size:22px;font-weight:700;margin-top:4px}.row{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.muted{color:var(--muted);font-size:13px}.btn{display:inline-block;border:0;border-radius:9px;padding:12px 17px;cursor:pointer;background:var(--green);color:#fff;text-decoration:none;margin:5px 5px 0 0}.btn.alt{background:#eee3d2;color:var(--ink)}.error{color:#9a2e20}.hidden{display:none}.items{margin-top:10px}.item{padding:9px 0}.actions{margin-top:18px}@media(max-width:600px){.hero h1{font-size:34px}.row{align-items:flex-start}.value{font-size:18px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><div class="brand">RUDRAKSHA FARM</div></div></header>
+<main class="wrap">
+<section class="hero"><div class="label">The Soul of Tradition</div><h1>Order Status</h1><p>मारवाड़ का शुद्ध घी</p></section>
+<section id="loading" class="card">Loading your order...</section>
+<section id="content" class="hidden">
+<div class="card">
+<div class="status"><div class="dot"></div><div><div class="label">Current status</div><div id="status" class="value">—</div></div></div>
+<div class="row" style="margin-top:18px"><span>Order ID</span><b id="orderId">—</b></div>
+<div class="row"><span>Payment</span><b id="payment">—</b></div>
+<div id="items" class="items"></div>
+<div class="row"><span>Total</span><b id="total">—</b></div>
+<div id="created" class="muted" style="margin-top:14px"></div>
+<div class="actions"><a id="wa" class="btn" target="_blank" rel="noopener">WhatsApp Rudraksha Farm</a><a class="btn alt" href="/">Back to Store</a></div>
+</div>
+</section>
+<section id="error" class="card error hidden"></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN");
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const params=new URLSearchParams(location.search),id=params.get("order_id");
+async function load(){
+  if(!id){throw new Error("Order ID is missing.");}
+  const r=await fetch("/api/orders/"+encodeURIComponent(id));
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||"Order not found.");
+  const o=d.order;
+  $("status").textContent=(o.status||"received").replaceAll("_"," ");
+  $("orderId").textContent=o.id;
+  $("payment").textContent=(o.paymentStatus||"pending").replaceAll("_"," ");
+  $("total").textContent=money(o.total);
+  $("created").textContent="Placed "+new Date(o.createdAt).toLocaleString("en-IN");
+  $("items").innerHTML=(o.items||[]).map(x=>'<div class="item">'+esc(x.pack)+" × "+esc(x.quantity)+" — "+money(x.unitPrice*x.quantity)+"</div>").join("");
+  $("wa").href="https://wa.me/917296820070?text="+encodeURIComponent("Hello Rudraksha Farm, I want an update on my order "+o.id+".");
+  $("loading").classList.add("hidden");$("content").classList.remove("hidden");
+}
+load().catch(e=>{$("loading").classList.add("hidden");$("error").textContent=e.message;$("error").classList.remove("hidden");});
+</script>
+</body>
+</html>
