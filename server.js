@@ -278,7 +278,9 @@ function serve(req,res){
   if(!file.startsWith(path.join(ROOT,'public')))return json(res,403,{error:'Forbidden'});
   if(!fs.existsSync(file)||fs.statSync(file).isDirectory())return json(res,404,{error:'Not found'});
   const ext=path.extname(file),types={'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.xml':'application/xml; charset=utf-8','.txt':'text/plain; charset=utf-8'};
-  res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream'});fs.createReadStream(file).pipe(res);
+  const headers={'Content-Type':types[ext]||'application/octet-stream'};
+  if(['.jpg','.jpeg','.png','.svg','.webp','.avif'].includes(ext))headers['Cache-Control']='public, max-age=604800, stale-while-revalidate=86400';
+  res.writeHead(200,headers);fs.createReadStream(file).pipe(res);
 }
 const server=http.createServer(async(req,res)=>{
   if(req.url.startsWith('/api/')){const r=await api(req,res);if(r===null)json(res,404,{error:'API route not found'})}
