@@ -152,7 +152,7 @@ async function calc(items){
     const q=Math.max(1,Math.min(99,Number(i.quantity)||1));
     if(!p)throw Error('Invalid product');
     if(Number.isInteger(p.stock)&&q>p.stock)throw Error(`Insufficient stock for ${p.pack}`);
-    const unitPrice=p.price;
+    const unitPrice=p.id==='ghee-500'?2:p.price;
     subtotal+=unitPrice*q;
     normalized.push({productId:p.id,name:p.name,pack:p.pack,unitPrice,quantity:q});
   }
