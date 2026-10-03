@@ -66,6 +66,9 @@ img{display:block;width:100%}button,a{font:inherit}a{text-decoration:none;color:
 .final{padding:125px 0;background:#120d09;color:#fffaf1;text-align:center;position:relative;overflow:hidden}.final:before{content:"R";position:absolute;font:700 500px "Cormorant Garamond",serif;color:rgba(182,138,59,.06);left:50%;top:50%;transform:translate(-50%,-53%)}.final .container{position:relative}.final .bigtitle{font-size:clamp(58px,8vw,110px);color:#fff}.final p{max-width:540px;margin:20px auto;color:#cbbca8;line-height:1.8;font-size:13px}
 footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:40px}.foot h4{color:#fff;font:500 25px "Cormorant Garamond",serif;margin:0 0 12px}.foot p,.foot a{font-size:12px;line-height:1.9}.copyright{border-top:1px solid rgba(255,255,255,.1);margin-top:40px;padding-top:18px;font-size:10px;display:flex;justify-content:space-between}
 .wa{position:fixed;z-index:40;right:20px;bottom:20px;background:#25d366;color:#fff;padding:13px 17px;border-radius:999px;font-size:11px;font-weight:600;box-shadow:0 12px 35px rgba(0,0,0,.25)}
+.cart-trigger{position:fixed;z-index:41;right:20px;bottom:78px;border:1px solid var(--gold2);background:var(--gold);color:#fffaf1;padding:13px 18px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;box-shadow:0 12px 35px rgba(0,0,0,.22)}
+.cart-trigger:hover{transform:translateY(-2px)}
+.cart-trigger span{font-weight:700}
 .cart{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);display:none}.cart.show{display:block}.drawer{position:absolute;right:0;top:0;height:100%;width:min(430px,92vw);background:var(--cream);padding:28px;color:var(--ink);overflow:auto}.drawerhead{display:flex;justify-content:space-between}.drawer h2{font:500 42px "Cormorant Garamond",serif;margin:0}.x{border:1px solid rgba(0,0,0,.15);background:none;width:38px;height:38px;border-radius:50%;cursor:pointer}.cartitem{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.12)}.cartitem img{width:72px;height:72px;object-fit:cover}.carttotal{display:flex;justify-content:space-between;margin:25px 0;font-weight:600}
 
 /* Footer redesign */
@@ -278,6 +281,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   </div>
 </footer>
 
+<button class="cart-trigger" id="cartTrigger" type="button" onclick="openCart()">CART · <span id="cartCount">0</span></button>
 <a class="wa" href="https://wa.me/917296820070" target="_blank">WhatsApp · 7296820070</a>
 <div class="cart" id="cart" onclick="if(event.target===this)closeCart()">
   <aside class="drawer">
@@ -288,9 +292,10 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 
     <div id="items"></div>
 
-    <div class="carttotal">
-      <span>Total</span>
-      <span id="total">₹0</span>
+    <div class="carttotal" style="display:block">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Subtotal</span><span id="subtotal">₹0</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#887a69;font-size:13px"><span>Shipping</span><span id="shipping">₹0</span></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(0,0,0,.12);padding-top:12px"><strong>Total</strong><strong id="total">₹0</strong></div>
     </div>
 
     <button class="btn gold" style="width:100%" onclick="openCheckout()">
@@ -350,8 +355,9 @@ function openMenu(){document.getElementById("menuOverlay").classList.add("show")
 function closeMenu(){document.getElementById("menuOverlay").classList.remove("show");document.body.style.overflow=""}
 let cart=[];
 const money=n=>"₹"+n.toLocaleString("en-IN");
-function add(name,price,img,productId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,productId,qty:1});render();document.getElementById("cart").classList.add("show")}
-function render(){let box=document.getElementById("items");if(!cart.length){box.innerHTML='<p style="color:#887a69;font-size:13px">Your cart is empty.</p>';document.getElementById("total").textContent="₹0";return}box.innerHTML=cart.map((x,i)=>`<div class="cartitem"><img src="${x.img}"><div style="flex:1"><b>${x.name}</b><div style="font-size:12px;color:#887a69">${money(x.price)}</div><div style="margin-top:8px"><button onclick="qty(${i},-1)">−</button> ${x.qty} <button onclick="qty(${i},1)">+</button></div></div></div>`).join("");document.getElementById("total").textContent=money(cart.reduce((s,x)=>s+x.price*x.qty,0))}
+function add(name,price,img,productId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,productId,qty:1});render();openCart()}
+function openCart(){render();document.getElementById("cart").classList.add("show")}
+function render(){let box=document.getElementById("items");const count=cart.reduce((s,x)=>s+x.qty,0);document.getElementById("cartCount").textContent=count;if(!cart.length){box.innerHTML='<p style="color:#887a69;font-size:13px">Your cart is empty.</p>';document.getElementById("subtotal").textContent="₹0";document.getElementById("shipping").textContent="₹0";document.getElementById("total").textContent="₹0";return}box.innerHTML=`<div class="cartitem"><img src="${x.img}"><div style="flex:1"><b>${x.name}</b><div style="font-size:12px;color:#887a69">${money(x.price)}</div><div style="margin-top:8px"><button onclick="qty(${i},-1)">−</button> ${x.qty} <button onclick="qty(${i},1)">+</button></div></div></div>`.replace(/></g,"&gt;");const subtotal=cart.reduce((s,x)=>s+x.price*x.qty,0);const shipping=subtotal>=1999?0:101;document.getElementById("subtotal").textContent=money(subtotal);document.getElementById("shipping").textContent=shipping?money(shipping):"FREE";document.getElementById("total").textContent=money(subtotal+shipping)}
 function qty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);render()}
 function closeCart(){document.getElementById("cart").classList.remove("show")}
 function openCheckout(){
