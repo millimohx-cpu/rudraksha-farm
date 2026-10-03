@@ -114,7 +114,7 @@ async function initDb(){
   }
 }
 async function recordOrderNotification(orderId,event){
-  await pool.query('INSERT INTO order_notifications(order_id,event) VALUES($1,$2)',[orderId,event]);
+  await pool.query('INSERT INTO order_notifications(order_id,event) SELECT $1,$2 WHERE NOT EXISTS (SELECT 1 FROM order_notifications WHERE order_id=$1 AND event=$2)',[orderId,event]);
 }
 async function markOrderPaid(id){
   const client=await pool.connect();
