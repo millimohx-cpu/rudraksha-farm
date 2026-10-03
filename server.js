@@ -113,7 +113,7 @@ async function markOrderPaid(id){
       for(const item of (o.items||[])){
         const q=Number(item.quantity)||0;
         if(q>0){
-          const u=await client.query('UPDATE products SET stock=stock-$1 WHERE id=$2 AND stock IS NOT NULL AND stock >= $1',[q,item.productId]);
+          const u=await client.query('UPDATE products SET stock=stock-$1,active=CASE WHEN stock-$1<=0 THEN FALSE ELSE active END WHERE id=$2 AND stock IS NOT NULL AND stock >= $1',[q,item.productId]);
           if(u.rowCount===0){
             const p=await client.query('SELECT stock,pack FROM products WHERE id=$1',[item.productId]);
             if(p.rowCount && p.rows[0].stock!==null)throw Error('Insufficient stock for '+p.rows[0].pack);
@@ -431,7 +431,8 @@ async function api(req,res){
       if(!r.rowCount)return json(res,404,{error:'Product not found'});
       const allowed=['price','stock','active','name','pack'];
       const sets=[],vals=[];
-      for(const k of allowed)if(b[k]!==undefined){sets.push(`${k}=$${vals.length+1}`);vals.push(b[k])}
+      for(const k of allowed)if(b[k]!==undefined){sets.push(`${k}=${vals.length+1}`);vals.push(k==='stock'&&b[k]!==null?Math.max(0,Math.floor(Number(b[k])||0)):b[k])}
+      if(b.stock!==undefined&&b.stock!==null&&Number(b.stock)<=0){sets.push('active=FALSE')}
       if(sets.length)await pool.query(`UPDATE products SET ${sets.join(',')} WHERE id=$${vals.length+1}`,[...vals,id]);
       const out=await pool.query('SELECT * FROM products WHERE id=$1',[id]);
       return json(res,200,{product:out.rows[0]});
