@@ -217,8 +217,7 @@ async function calc(items,couponCode){
     const unitPrice=p.price;
     subtotal+=unitPrice*q;
     normalized.push({productId:p.id,name:p.name,pack:p.pack,unitPrice,quantity:q});
-  }
-  if(!normalized.length)throw Error('Cart is empty');
+  }  if(!normalized.length)throw Error('Cart is empty');
   const shipping=subtotal>=1999?0:101;
   let discount=0,coupon=null;
   if(couponCode){
@@ -243,6 +242,7 @@ function cachedOrderStatus(id,row){
   return row;
 }
 function normalizePhone(v){let p=String(v||'').replace(/\D/g,'');if(p.startsWith('91')&&p.length===12)p=p.slice(2);return p.length===10?p:null}
+const paymentAttempts=new Map();
 function allowPaymentCreate(key){
   const now=Date.now(),x=paymentAttempts.get(key)||{count:0,at:now};
   if(now-x.at>60*1000){x.count=0;x.at=now}
@@ -437,8 +437,7 @@ async function api(req,res){
       }
       return json(res,200,{ok:true});
     }
-    if(req.method==='GET'&&p.startsWith('/api/orders/')){
-      const id=p.split('/').pop(),accessToken=u.searchParams.get('access_token');
+    if(req.method==='GET'&&p.startsWith('/api/orders/')){      const id=p.split('/').pop(),accessToken=u.searchParams.get('access_token');
       if(!accessToken)return json(res,401,{error:'Order access token required'});
       const r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at,order_access_token FROM orders WHERE id=$1',[id]);
       if(!r.rowCount||r.rows[0].order_access_token!==accessToken)return json(res,404,{error:'Order not found'});
