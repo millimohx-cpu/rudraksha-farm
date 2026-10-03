@@ -357,7 +357,24 @@ let cart=[];
 const money=n=>"₹"+n.toLocaleString("en-IN");
 function add(name,price,img,productId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,productId,qty:1});render();openCart()}
 function openCart(){render();document.getElementById("cart").classList.add("show")}
-function render(){let box=document.getElementById("items");const count=cart.reduce((s,x)=>s+x.qty,0);document.getElementById("cartCount").textContent=count;if(!cart.length){box.innerHTML='<p style="color:#887a69;font-size:13px">Your cart is empty.</p>';document.getElementById("subtotal").textContent="₹0";document.getElementById("shipping").textContent="₹0";document.getElementById("total").textContent="₹0";return}box.innerHTML=`<div class="cartitem"><img src="${x.img}"><div style="flex:1"><b>${x.name}</b><div style="font-size:12px;color:#887a69">${money(x.price)}</div><div style="margin-top:8px"><button onclick="qty(${i},-1)">−</button> ${x.qty} <button onclick="qty(${i},1)">+</button></div></div></div>`.replace(/></g,"&gt;");const subtotal=cart.reduce((s,x)=>s+x.price*x.qty,0);const shipping=subtotal>=1999?0:101;document.getElementById("subtotal").textContent=money(subtotal);document.getElementById("shipping").textContent=shipping?money(shipping):"FREE";document.getElementById("total").textContent=money(subtotal+shipping)}
+function render(){
+  let box=document.getElementById("items");
+  const count=cart.reduce((s,x)=>s+x.qty,0);
+  document.getElementById("cartCount").textContent=count;
+  if(!cart.length){
+    box.innerHTML='<p style="color:#887a69;font-size:13px">Your cart is empty.</p>';
+    document.getElementById("subtotal").textContent="₹0";
+    document.getElementById("shipping").textContent="₹0";
+    document.getElementById("total").textContent="₹0";
+    return;
+  }
+  box.innerHTML=cart.map((x,i)=>`<div class="cartitem"><img src="${x.img}"><div style="flex:1"><b>${x.name}</b><div style="font-size:12px;color:#887a69">${money(x.price)}</div><div style="margin-top:8px"><button onclick="qty(${i},-1)">−</button> ${x.qty} <button onclick="qty(${i},1)">+</button></div></div></div>`).join("");
+  const subtotal=cart.reduce((s,x)=>s+x.price*x.qty,0);
+  const shipping=subtotal>=1999?0:101;
+  document.getElementById("subtotal").textContent=money(subtotal);
+  document.getElementById("shipping").textContent=shipping?money(shipping):"FREE";
+  document.getElementById("total").textContent=money(subtotal+shipping);
+}
 function qty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);render()}
 function closeCart(){document.getElementById("cart").classList.remove("show")}
 function openCheckout(){
