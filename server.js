@@ -204,13 +204,6 @@ function cachedOrderStatus(id,row){
   return row;
 }
 function normalizePhone(v){let p=String(v||'').replace(/\D/g,'');if(p.startsWith('91')&&p.length===12)p=p.slice(2);return p.length===10?p:null}
-function otpHash(phone,otp){return crypto.createHash('sha256').update(String(phone)+':'+String(otp)+':'+SESSION_SECRET).digest('hex')}
-async function sendOtpSms(phone,otp){
-  if(!OTP_API_URL||!OTP_API_KEY)throw Error('OTP service is not configured. Add OTP_API_URL and OTP_API_KEY in Render environment variables.');
-  const r=await fetch(OTP_API_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+OTP_API_KEY},body:JSON.stringify({phone:'+91'+phone,otp,message:'Your Rudraksha Farm login OTP is '+otp+'. It expires in 5 minutes.'})});
-  if(!r.ok){const raw=await r.text();throw Error('Unable to send OTP'+(raw?' — '+raw.slice(0,180):''));}
-}
-const paymentAttempts=new Map();
 function allowPaymentCreate(key){
   const now=Date.now(),x=paymentAttempts.get(key)||{count:0,at:now};
   if(now-x.at>60*1000){x.count=0;x.at=now}
