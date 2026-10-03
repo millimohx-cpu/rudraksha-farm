@@ -256,7 +256,7 @@ function allowApiRequest(req){
   const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();
   const now=Date.now(),bucket=Math.floor(now/60000),key=ip+"|"+bucket;
   const n=(apiRateLimit.get(key)||0)+1; apiRateLimit.set(key,n);
-  if(apiRateLimit.size>5000){for(const [k]=apiRateLimit)if(!k.endsWith("|"+bucket))apiRateLimit.delete(k)}
+  if(apiRateLimit.size>5000){for(const [k,v] of apiRateLimit)if(!k.endsWith("|"+bucket))apiRateLimit.delete(k)}
   return n<=180;
 }
 const loginAttempts=new Map();
