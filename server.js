@@ -62,6 +62,9 @@ async function initDb(){
       expires_at TIMESTAMPTZ NOT NULL
     );
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS inventory_deducted BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ;
   `);
   const {rows}=await pool.query('SELECT COUNT(*)::int AS count FROM products');
   if(rows[0].count===0){
@@ -111,7 +114,7 @@ async function dbOrder(id){
 }
 function rowOrder(r){
   if(!r)return null;
-  return {id:r.id,createdAt:new Date(r.created_at).toISOString(),customer:r.customer,items:r.items,subtotal:r.subtotal,shipping:r.shipping,total:r.total,paymentStatus:r.payment_status,status:r.status,cashfreeOrderId:r.cashfree_order_id||null,cashfreeEnvironment:r.cashfree_environment||null,paymentSessionId:r.payment_session_id||null};
+  return {id:r.id,createdAt:new Date(r.created_at).toISOString(),customer:r.customer,items:r.items,subtotal:r.subtotal,shipping:r.shipping,total:r.total,paymentStatus:r.payment_status,status:r.status,cashfreeOrderId:r.cashfree_order_id||null,cashfreeEnvironment:r.cashfree_environment||null,paymentSessionId:r.payment_session_id||null,courier:r.courier||null,trackingNumber:r.tracking_number||null,dispatchedAt:r.dispatched_at?new Date(r.dispatched_at).toISOString():null};
 }
 async function saveOrder(o){
   await pool.query(
@@ -271,8 +274,13 @@ async function api(req,res){
       if(!o)return json(res,404,{error:'Order not found'});
       const allowed=['received','payment_confirmed','processing','dispatched','delivered','cancelled'];
       if(b.status&&!allowed.includes(b.status))return json(res,400,{error:'Invalid status'});
-      if(b.status)await pool.query('UPDATE orders SET status=$1 WHERE id=$2',[b.status,id]);
+      if(b.status){
+        if(b.status==='dispatched') await pool.query('UPDATE orders SET status=$1,dispatched_at=COALESCE(dispatched_at,NOW()) WHERE id=$2',[b.status,id]);
+        else await pool.query('UPDATE orders SET status=$1 WHERE id=$2',[b.status,id]);
+      }
       if(b.paymentStatus)await pool.query('UPDATE orders SET payment_status=$1 WHERE id=$2',[b.paymentStatus,id]);
+      if(b.courier!==undefined)await pool.query('UPDATE orders SET courier=$1 WHERE id=$2',[String(b.courier||'').trim()||null,id]);
+      if(b.trackingNumber!==undefined)await pool.query('UPDATE orders SET tracking_number=$1 WHERE id=$2',[String(b.trackingNumber||'').trim()||null,id]);
       return json(res,200,{order:rowOrder(await dbOrder(id))});
     }
     if(req.method==='GET'&&p==='/api/admin/inventory'){
