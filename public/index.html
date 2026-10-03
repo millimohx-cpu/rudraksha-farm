@@ -336,6 +336,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
         style="width:100%;padding:13px;margin:7px 0 15px"
         placeholder="Email address">
 
+      <label>Coupon Code (optional)</label><div style="display:flex;gap:8px;margin:7px 0 15px"><input id="couponCode" style="flex:1;padding:13px" placeholder="Enter coupon code"><button type="button" class="btn alt" onclick="applyCoupon()">Apply</button></div><p id="couponMessage" style="font-size:12px;margin:-8px 0 14px;color:#887a69"></p>
       <label>Address</label>
       <textarea id="customerAddress" required
         style="width:100%;padding:13px;margin:7px 0 15px;min-height:90px"
@@ -358,7 +359,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
  <script>
 function openMenu(){document.getElementById("menuOverlay").classList.add("show");document.body.style.overflow="hidden"}
 function closeMenu(){document.getElementById("menuOverlay").classList.remove("show");document.body.style.overflow=""}
-let cart=[];
+let cart=[];let appliedCoupon="";
 const money=n=>"₹"+n.toLocaleString("en-IN");
 function add(name,price,img,productId){let x=cart.find(a=>a.name===name);x?x.qty++:cart.push({name,price,img,productId,qty:1});render();openCart()}
 function openCart(){render();document.getElementById("cart").classList.add("show")}
@@ -411,6 +412,7 @@ function loadCashfree(){
   });
   return cashfreeLoader;
 }
+async function applyCoupon(){const code=document.getElementById("couponCode").value.trim();const msg=document.getElementById("couponMessage");if(!code){appliedCoupon="";msg.textContent="";return}msg.textContent="Coupon will be validated securely during checkout.";appliedCoupon=code.toUpperCase();}
 async function submitOrder(e){
   e.preventDefault();
 
