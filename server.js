@@ -151,7 +151,7 @@ async function dbOrder(id){
 }
 function rowOrder(r){
   if(!r)return null;
-  return {id:r.id,createdAt:new Date(r.created_at).toISOString(),customer:r.customer,items:r.items,subtotal:r.subtotal,shipping:r.shipping,total:r.total,paymentStatus:r.payment_status,status:r.status,cashfreeOrderId:r.cashfree_order_id||null,cashfreeEnvironment:r.cashfree_environment||null,paymentSessionId:r.payment_session_id||null,courier:r.courier||null,trackingNumber:r.tracking_number||null,dispatchedAt:r.dispatched_at?new Date(r.dispatched_at).toISOString():null};
+  return {id:r.id,createdAt:new Date(r.created_at).toISOString(),customer:r.customer,items:r.items,subtotal:r.subtotal,shipping:r.shipping,total:r.total,paymentStatus:r.payment_status,status:r.status,cashfreeOrderId:r.cashfree_order_id||null,cashfreeEnvironment:r.cashfree_environment||null,paymentSessionId:r.payment_session_id||null,accessToken:r.order_access_token||null,courier:r.courier||null,trackingNumber:r.tracking_number||null,dispatchedAt:r.dispatched_at?new Date(r.dispatched_at).toISOString():null};
 }
 async function saveOrder(o){
   await pool.query(
@@ -425,8 +425,14 @@ async function api(req,res){
       const allowed=['received','payment_confirmed','processing','dispatched','delivered','cancelled'];
       if(b.status&&!allowed.includes(b.status))return json(res,400,{error:'Invalid status'});
       if(b.status){
-        if(b.status==='dispatched') await pool.query('UPDATE orders SET status=$1,dispatched_at=COALESCE(dispatched_at,NOW()) WHERE id=$2',[b.status,id]);
-        else await pool.query('UPDATE orders SET status=$1 WHERE id=$2',[b.status,id]);
+        if(b.status==='dispatched'){
+          const courier=String(b.courier!==undefined?b.courier:(o.courier||'')).trim();
+          const tracking=String(b.trackingNumber!==undefined?b.trackingNumber:(o.tracking_number||'')).trim();
+          if(!courier||!tracking)return json(res,400,{error:'Courier and tracking/AWB are required before dispatch.'});
+          await pool.query('UPDATE orders SET status=$1,dispatched_at=COALESCE(dispatched_at,NOW()),courier=$3,tracking_number=$4 WHERE id=$2',[b.status,id,courier,tracking]);
+        }else{
+          await pool.query('UPDATE orders SET status=$1 WHERE id=$2',[b.status,id]);
+        }
         await recordOrderNotification(id,b.status);
       }
       if(b.paymentStatus)await pool.query('UPDATE orders SET payment_status=$1 WHERE id=$2',[b.paymentStatus,id]);
