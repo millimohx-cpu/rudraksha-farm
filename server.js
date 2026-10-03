@@ -72,6 +72,8 @@ async function initDb(){
     );
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code TEXT;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(10,2) NOT NULL DEFAULT 0;
     CREATE TABLE IF NOT EXISTS order_notifications(
       id BIGSERIAL PRIMARY KEY,
       order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -133,6 +135,7 @@ async function markOrderPaid(id){
         }
       }
       await client.query("UPDATE orders SET inventory_deducted=TRUE,payment_status='paid',status='payment_confirmed' WHERE id=$1",[id]);
+      if(o.coupon_code)await client.query("UPDATE coupons SET used_count=used_count+1 WHERE code=$1",[o.coupon_code]);
       await client.query("INSERT INTO order_notifications(order_id,event) VALUES($1,'payment_confirmed')",[id]);
     }else{
       await client.query("UPDATE orders SET payment_status='paid',status='payment_confirmed' WHERE id=$1",[id]);
@@ -191,7 +194,7 @@ function verifyWebhook(rawBody,signature,timestamp){
   const a=Buffer.from(expected),b=Buffer.from(String(signature));
   return a.length===b.length&&crypto.timingSafeEqual(a,b);
 }
-async function calc(items){
+async function calc(items,couponCode){
   const requested=[...new Set((items||[]).map(i=>String(i.productId||'')).filter(Boolean))];
   if(!requested.length)throw Error('Cart is empty');
   const r=await pool.query('SELECT id,name,pack,price,stock,active FROM products WHERE active=true AND id=ANY($1::text[])',[requested]);
@@ -208,7 +211,17 @@ async function calc(items){
   }
   if(!normalized.length)throw Error('Cart is empty');
   const shipping=subtotal>=1999?0:101;
-  return {items:normalized,subtotal,shipping,total:subtotal+shipping};
+  let discount=0,coupon=null;
+  if(couponCode){
+    const code=String(couponCode).trim().toUpperCase();
+    const cr=await pool.query("SELECT * FROM coupons WHERE code=$1 AND active=true AND (expires_at IS NULL OR expires_at>NOW()) AND (max_uses IS NULL OR used_count<max_uses)",[code]);
+    if(!cr.rowCount)throw Error("Invalid or expired coupon");
+    coupon=cr.rows[0];
+    if(subtotal<Number(coupon.min_subtotal||0))throw Error("Coupon minimum order value is ₹"+Number(coupon.min_subtotal).toLocaleString("en-IN"));
+    discount=coupon.type==="percent"?Math.min(subtotal,subtotal*Number(coupon.value)/100):Math.min(subtotal,Number(coupon.value));
+  }
+  const total=Math.max(0,subtotal+shipping-discount);
+  return {items:normalized,subtotal,shipping,discount,couponCode:coupon?coupon.code:null,total};
 }
 const cashfreeStatusCache=new Map();
 function cachedCashfreeStatus(id,value){const now=Date.now(),hit=cashfreeStatusCache.get(id);if(hit&&now-hit.at<5000)return hit.value;cashfreeStatusCache.set(id,{at:now,value});if(cashfreeStatusCache.size>2000){for(const [k,v] of cashfreeStatusCache)if(now-v.at>15000)cashfreeStatusCache.delete(k)}return value}
@@ -329,7 +342,7 @@ async function api(req,res){
       const b=await body(req);
       if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
       let c;try{c=await calc(b.items)}catch(e){return json(res,400,{error:e.message})}
-      const o={id:orderId(),createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received'};
+      const o={id:orderId(),createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,discount:c.discount||0,couponCode:c.couponCode||null,total:c.total,paymentStatus:'pending',status:'received'};
       await saveOrder(o);return json(res,201,{order:o});
     }
     if(req.method==='POST'&&p==='/api/payments/cashfree/order'){
@@ -446,6 +459,27 @@ async function api(req,res){
       const id=p.split('/')[4];
       const r=await pool.query('SELECT id,event,created_at,sent_at,channel FROM order_notifications WHERE order_id=$1 ORDER BY created_at DESC',[id]);
       return json(res,200,{notifications:r.rows.map(x=>({id:x.id,event:x.event,createdAt:new Date(x.created_at).toISOString(),sentAt:x.sent_at?new Date(x.sent_at).toISOString():null,channel:x.channel}))});
+    }
+    if(req.method==='GET'&&p==='/api/admin/coupons'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const r=await pool.query('SELECT id,code,type,value,min_subtotal,max_uses,used_count,active,expires_at FROM coupons ORDER BY id DESC');
+      return json(res,200,{coupons:r.rows});
+    }
+    if(req.method==='POST'&&p==='/api/admin/coupons'){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const b=await body(req),code=String(b.code||'').trim().toUpperCase(),type=b.type==='fixed'?'fixed':'percent',value=Math.max(0,Number(b.value)||0);
+      if(!code||value<=0)return json(res,400,{error:'Coupon code and positive value are required'});
+      if(type==='percent'&&value>100)return json(res,400,{error:'Percent discount cannot exceed 100'});
+      try{
+        const r=await pool.query('INSERT INTO coupons(code,type,value,min_subtotal,max_uses,active,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *',[code,type,value,Math.max(0,Number(b.minSubtotal)||0),b.maxUses===''||b.maxUses==null?null:Math.max(1,Math.floor(Number(b.maxUses))),b.active!==false,b.expiresAt||null]);
+        return json(res,201,{coupon:r.rows[0]});
+      }catch(e){return json(res,400,{error:e.code==='23505'?'Coupon code already exists':e.message})}
+    }
+    if(req.method==='PATCH'&&p.startsWith('/api/admin/coupons/')){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const id=p.split('/').pop(),b=await body(req);
+      if(b.active!==undefined)await pool.query('UPDATE coupons SET active=$1 WHERE id=$2',[!!b.active,id]);
+      return json(res,200,{ok:true});
     }
     if(req.method==='GET'&&p==='/api/admin/customers'){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
