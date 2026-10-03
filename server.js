@@ -72,6 +72,15 @@ async function initDb(){
     );
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    CREATE TABLE IF NOT EXISTS order_notifications(
+      id BIGSERIAL PRIMARY KEY,
+      order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      event TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sent_at TIMESTAMPTZ,
+      channel TEXT NOT NULL DEFAULT 'internal'
+    );
+    CREATE INDEX IF NOT EXISTS idx_order_notifications_order ON order_notifications(order_id,created_at DESC);
     CREATE TABLE IF NOT EXISTS customer_sessions(
       token TEXT PRIMARY KEY,
       phone TEXT NOT NULL,
@@ -102,6 +111,9 @@ async function initDb(){
     );
   }
 }
+async function recordOrderNotification(orderId,event){
+  await pool.query('INSERT INTO order_notifications(order_id,event) VALUES($1,$2)',[orderId,event]);
+}
 async function markOrderPaid(id){
   const client=await pool.connect();
   try{
@@ -121,6 +133,7 @@ async function markOrderPaid(id){
         }
       }
       await client.query("UPDATE orders SET inventory_deducted=TRUE,payment_status='paid',status='payment_confirmed' WHERE id=$1",[id]);
+      await client.query("INSERT INTO order_notifications(order_id,event) VALUES($1,'payment_confirmed')",[id]);
     }else{
       await client.query("UPDATE orders SET payment_status='paid',status='payment_confirmed' WHERE id=$1",[id]);
     }
@@ -414,12 +427,19 @@ async function api(req,res){
       if(b.status){
         if(b.status==='dispatched') await pool.query('UPDATE orders SET status=$1,dispatched_at=COALESCE(dispatched_at,NOW()) WHERE id=$2',[b.status,id]);
         else await pool.query('UPDATE orders SET status=$1 WHERE id=$2',[b.status,id]);
+        await recordOrderNotification(id,b.status);
       }
       if(b.paymentStatus)await pool.query('UPDATE orders SET payment_status=$1 WHERE id=$2',[b.paymentStatus,id]);
       if(b.courier!==undefined)await pool.query('UPDATE orders SET courier=$1 WHERE id=$2',[String(b.courier||'').trim()||null,id]);
       if(b.trackingNumber!==undefined)await pool.query('UPDATE orders SET tracking_number=$1 WHERE id=$2',[String(b.trackingNumber||'').trim()||null,id]);
       orderStatusCache.delete(id);
       return json(res,200,{order:rowOrder(await dbOrder(id))});
+    }
+    if(req.method==='GET'&&p.startsWith('/api/admin/orders/')&&p.endsWith('/notifications')){
+      if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
+      const id=p.split('/')[4];
+      const r=await pool.query('SELECT id,event,created_at,sent_at,channel FROM order_notifications WHERE order_id=$1 ORDER BY created_at DESC',[id]);
+      return json(res,200,{notifications:r.rows.map(x=>({id:x.id,event:x.event,createdAt:new Date(x.created_at).toISOString(),sentAt:x.sent_at?new Date(x.sent_at).toISOString():null,channel:x.channel}))});
     }
     if(req.method==='GET'&&p==='/api/admin/inventory'){
       if(!(await auth(req)))return json(res,401,{error:'Unauthorized'});
