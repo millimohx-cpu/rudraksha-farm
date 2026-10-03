@@ -228,7 +228,7 @@ async function api(req,res){
     }
     if(req.method==='GET'&&p==='/api/customer/orders'){
       const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
-      const r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE regexp_replace(COALESCE(customer->>\'phone\',\'\'), \'\\\\D\', \'\', \'g\')=$1 ORDER BY created_at DESC',[phone]);
+      const r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE customer->>'phone' IN ($1,'+91'||$1,'91'||$1) ORDER BY created_at DESC',[phone]);
       return json(res,200,{orders:r.rows.map(o=>({id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}))});
     }
     if(req.method==='POST'&&p==='/api/customer/logout'){
