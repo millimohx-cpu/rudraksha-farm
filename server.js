@@ -410,6 +410,7 @@ async function api(req,res){
       if(b.paymentStatus)await pool.query('UPDATE orders SET payment_status=$1 WHERE id=$2',[b.paymentStatus,id]);
       if(b.courier!==undefined)await pool.query('UPDATE orders SET courier=$1 WHERE id=$2',[String(b.courier||'').trim()||null,id]);
       if(b.trackingNumber!==undefined)await pool.query('UPDATE orders SET tracking_number=$1 WHERE id=$2',[String(b.trackingNumber||'').trim()||null,id]);
+      orderStatusCache.delete(id);
       return json(res,200,{order:rowOrder(await dbOrder(id))});
     }
     if(req.method==='GET'&&p==='/api/admin/inventory'){
