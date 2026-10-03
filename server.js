@@ -78,9 +78,12 @@ async function initDb(){
       expires_at TIMESTAMPTZ NOT NULL
     );
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS inventory_deducted BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_access_token TEXT UNIQUE;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ;
+    CREATE INDEX IF NOT EXISTS idx_orders_access_token ON orders (order_access_token);
+    UPDATE orders SET order_access_token=encode(gen_random_bytes(32),'hex') WHERE order_access_token IS NULL;
     CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders ((customer->>'phone'));
     CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders (created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_customer_sessions_phone ON customer_sessions (phone);
@@ -138,10 +141,10 @@ function rowOrder(r){
 }
 async function saveOrder(o){
   await pool.query(
-    `INSERT INTO orders(id,created_at,customer,items,subtotal,shipping,total,payment_status,status,cashfree_order_id,cashfree_environment,payment_session_id)
-     VALUES($1,$2,$3::jsonb,$4::jsonb,$5,$6,$7,$8,$9,$10,$11,$12)
+    `INSERT INTO orders(id,created_at,customer,items,subtotal,shipping,total,payment_status,status,cashfree_order_id,cashfree_environment,payment_session_id,order_access_token)
+     VALUES($1,$2,$3::jsonb,$4::jsonb,$5,$6,$7,$8,$9,$10,$11,$12,$13)
      ON CONFLICT(id) DO UPDATE SET customer=EXCLUDED.customer,items=EXCLUDED.items,subtotal=EXCLUDED.subtotal,shipping=EXCLUDED.shipping,total=EXCLUDED.total,payment_status=EXCLUDED.payment_status,status=EXCLUDED.status,cashfree_order_id=EXCLUDED.cashfree_order_id,cashfree_environment=EXCLUDED.cashfree_environment,payment_session_id=EXCLUDED.payment_session_id`,
-    [o.id,o.createdAt,JSON.stringify(o.customer),JSON.stringify(o.items),o.subtotal,o.shipping,o.total,o.paymentStatus,o.status,o.cashfreeOrderId||null,o.cashfreeEnvironment||null,o.paymentSessionId||null]
+    [o.id,o.createdAt,JSON.stringify(o.customer),JSON.stringify(o.items),o.subtotal,o.shipping,o.total,o.paymentStatus,o.status,o.cashfreeOrderId||null,o.cashfreeEnvironment||null,o.paymentSessionId||null,o.orderAccessToken||token()]
   );
 }
 function json(res,status,obj){const s=JSON.stringify(obj);res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(s)}
@@ -276,7 +279,7 @@ async function api(req,res){
     if(req.method==='GET'&&p==='/api/customer/orders'){
       const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
       const r=await pool.query("SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE customer->>'phone' IN ($1,'+91'||$1,'91'||$1) ORDER BY created_at DESC",[phone]);
-      return json(res,200,{orders:r.rows.map(o=>({id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}))});
+      return json(res,200,{orders:r.rows.map(o=>({id:o.id,accessToken:o.order_access_token,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}))});
     }
     if(req.method==='PATCH'&&p==='/api/customer/profile'){
       const phone=await customerAuth(req);if(!phone)return json(res,401,{error:'Unauthorized'});
@@ -321,21 +324,22 @@ async function api(req,res){
       const b=await body(req);
       if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
       let c;try{c=await calc(b.items)}catch(e){return json(res,400,{error:e.message})}
-      const id=orderId(),customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');
-      const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/cashfree-return?order_id={order_id}`}};
+      const id=orderId(),accessToken=token(),customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');
+      const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/cashfree-return?order_id={order_id}&access_token=${accessToken}`}};
       if(PUBLIC_BASE_URL)payload.order_meta.notify_url=`${PUBLIC_BASE_URL}/api/payments/cashfree/webhook`;
       try{
         const cf=await cashfreeFetch('/orders',{method:'POST',body:JSON.stringify(payload)});
-        const o={id,createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null};
+        const o={id,createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,total:c.total,paymentStatus:'pending',status:'received',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null,orderAccessToken:accessToken};
         await saveOrder(o);
-        return json(res,201,{orderId:id,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total});
+        return json(res,201,{orderId:id,accessToken,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total});
       }catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}
     }
     if(req.method==='GET'&&p==='/cashfree-return'){
-      const id=u.searchParams.get('order_id');
-      if(!id)return json(res,400,{error:'Missing order_id'});
+      const id=u.searchParams.get('order_id'),accessToken=u.searchParams.get('access_token');
+      if(!id||!accessToken)return json(res,400,{error:'Missing order access token'});
       const o=await dbOrder(id);
       if(!o)return json(res,404,{error:'Order not found'});
+      if(o.order_access_token!==accessToken)return json(res,403,{error:'Invalid order access token'});
       res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}`,'Cache-Control':'no-store'});
       res.end();
       // Do not block the customer redirect on Cashfree's verification API.
@@ -388,8 +392,10 @@ async function api(req,res){
       return json(res,200,{ok:true});
     }
     if(req.method==='GET'&&p.startsWith('/api/orders/')){
-      const id=p.split('/').pop(),r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE id=$1',[id]);
-      if(!r.rowCount)return json(res,404,{error:'Order not found'});
+      const id=p.split('/').pop(),accessToken=u.searchParams.get('access_token');
+      if(!accessToken)return json(res,401,{error:'Order access token required'});
+      const r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at,order_access_token FROM orders WHERE id=$1',[id]);
+      if(!r.rowCount||r.rows[0].order_access_token!==accessToken)return json(res,404,{error:'Order not found'});
       const o=cachedOrderStatus(id,r.rows[0]);
       return json(res,200,{order:{id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}});
     }
