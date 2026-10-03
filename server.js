@@ -187,6 +187,14 @@ async function calc(items){
   const shipping=subtotal>=1999?0:101;
   return {items:normalized,subtotal,shipping,total:subtotal+shipping};
 }
+const orderStatusCache=new Map();
+function cachedOrderStatus(id,row){
+  const now=Date.now(),hit=orderStatusCache.get(id);
+  if(hit&&now-hit.at<5000)return hit.value;
+  orderStatusCache.set(id,{at:now,value:row});
+  if(orderStatusCache.size>2000){for(const [k,v] of orderStatusCache)if(now-v.at>15000)orderStatusCache.delete(k)}
+  return row;
+}
 function normalizePhone(v){let p=String(v||'').replace(/\D/g,'');if(p.startsWith('91')&&p.length===12)p=p.slice(2);return p.length===10?p:null}
 function otpHash(phone,otp){return crypto.createHash('sha256').update(String(phone)+':'+String(otp)+':'+SESSION_SECRET).digest('hex')}
 async function sendOtpSms(phone,otp){
@@ -381,7 +389,7 @@ async function api(req,res){
     if(req.method==='GET'&&p.startsWith('/api/orders/')){
       const id=p.split('/').pop(),r=await pool.query('SELECT id,created_at,items,total,payment_status,status,courier,tracking_number,dispatched_at FROM orders WHERE id=$1',[id]);
       if(!r.rowCount)return json(res,404,{error:'Order not found'});
-      const o=r.rows[0];
+      const o=cachedOrderStatus(id,r.rows[0]);
       return json(res,200,{order:{id:o.id,createdAt:new Date(o.created_at).toISOString(),items:o.items,total:o.total,paymentStatus:o.payment_status,status:o.status,courier:o.courier||null,trackingNumber:o.tracking_number||null,dispatchedAt:o.dispatched_at?new Date(o.dispatched_at).toISOString():null}});
     }
     if(req.method==='GET'&&p==='/api/admin/orders'){
