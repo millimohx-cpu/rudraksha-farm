@@ -283,13 +283,30 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   .menu-btn::after{top:30px;left:12px}
 }
 
+
+/* FINAL MOBILE MENU BUTTON */
+@media(max-width:600px){
+  .nav{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:1000!important}
+  .menu-btn{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:44px!important;height:44px!important;border:0!important;
+    background:transparent!important;color:#17120e!important;padding:0!important;
+  }
+  .hamburger-lines{display:flex!important;flex-direction:column!important;gap:5px!important;width:22px!important}
+  .hamburger-lines i{
+    display:block!important;width:22px!important;height:2px!important;
+    background:currentColor!important;border-radius:2px!important;
+  }
+  .menu-btn::before,.menu-btn::after{display:none!important}
+}
+
 </style>
 </head>
 <body>
 <div class="top">RUDRAKSHA FARM · BARmer, RAJASTHAN · THE SOUL OF TRADITION</div>
 <header class="nav">
  <div class="container navin">
-  <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()">☰</button>
+  <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()"><span class="hamburger-lines" aria-hidden="true"><i></i><i></i><i></i></span></button>
   <div class="navlinks"><a href="#story">Story</a><a href="#process">Bilona</a><a href="#shop">Shop</a></div>
   <a href="#home" class="brand brand-logo-wrap"><span class="brand-logo-fallback" aria-hidden="true">R</span><img src="/logo.jpg?v=2" alt="Rudraksha — The Soul of Tradition" class="brand-logo" onerror="this.style.display='none';this.previousElementSibling.style.display='grid'"></a>
   <div class="navlinks right"><a href="/customer.html">LOGIN</a><a href="our-farm.html">Our Farm</a><a href="#credentials">Trust</a><a href="#shop">Order</a></div>
