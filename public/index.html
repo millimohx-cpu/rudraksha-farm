@@ -254,6 +254,35 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   .cart-trigger{right:12px;bottom:60px;padding:10px 13px;font-size:9px}
 }
 
+
+/* HEADER FIX — sticky mobile navigation + true three-line menu */
+.menu-btn{position:relative;font-size:0!important}
+.menu-btn::before,
+.menu-btn::after,
+.menu-btn span{content:"";position:absolute;left:10px;width:20px;height:2px;background:currentColor;border-radius:2px;transition:.2s}
+.menu-btn::before{top:12px}
+.menu-btn span{top:19px;display:block}
+.menu-btn::after{top:26px}
+@media(max-width:600px){
+  .nav{
+    position:fixed!important;top:0!important;left:0;right:0;
+    z-index:1000!important;height:64px;
+    background:rgba(248,243,233,.98)!important;
+    box-shadow:0 2px 14px rgba(23,18,14,.10);
+  }
+  .navin{height:64px}
+  .menu-btn{
+    position:relative!important;display:block!important;
+    width:44px!important;height:44px!important;
+    border:0!important;border-radius:8px!important;
+    background:transparent!important;color:#17120e!important;
+    padding:0!important;
+  }
+  .menu-btn::before{top:10px;left:12px}
+  .menu-btn span{top:20px;left:12px}
+  .menu-btn::after{top:30px;left:12px}
+}
+
 </style>
 </head>
 <body>
