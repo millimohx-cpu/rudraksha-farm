@@ -365,7 +365,7 @@ async function api(req,res){
       return json(res,200,{ok:true});
     }
     if(req.method==='POST'&&p==='/api/admin/login'){
-      if(ADMIN_EMAIL==='admin@example.com'||ADMIN_PASSWORD==='CHANGE_THIS_BEFORE_DEPLOY'||SESSION_SECRET==='CHANGE_THIS_TO_A_LONG_RANDOM_SECRET')return json(res,503,{error:'Admin credentials are not configured on the server'});
+      if(!ADMIN_EMAIL||!ADMIN_PASSWORD||SESSION_SECRET.length<32)return json(res,503,{error:'Admin credentials are not configured on the server'});
       const b=await body(req);
       if(b.email!==ADMIN_EMAIL||b.password!==ADMIN_PASSWORD)return json(res,401,{error:'Invalid credentials'});
       const t=token();
