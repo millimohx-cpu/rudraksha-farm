@@ -631,7 +631,9 @@ function serve(req,res){
   if(!fs.existsSync(file)||fs.statSync(file).isDirectory())return json(res,404,{error:'Not found'});
   const ext=path.extname(file),types={'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.xml':'application/xml; charset=utf-8','.txt':'text/plain; charset=utf-8'};
   const headers={'Content-Type':types[ext]||'application/octet-stream'};
-  if(['.jpg','.jpeg','.png','.svg','.webp','.avif'].includes(ext))headers['Cache-Control']='public, max-age=604800, stale-while-revalidate=86400';
+  if(ext==='.html')headers['Cache-Control']='no-store, no-cache, must-revalidate, proxy-revalidate';
+  else if(['.css','.js'].includes(ext))headers['Cache-Control']='public, max-age=300, must-revalidate';
+  else if(['.jpg','.jpeg','.png','.svg','.webp','.avif'].includes(ext))headers['Cache-Control']='public, max-age=604800, stale-while-revalidate=86400';
   res.writeHead(200,headers);fs.createReadStream(file).pipe(res);
 }
 const server=http.createServer(async(req,res)=>{
