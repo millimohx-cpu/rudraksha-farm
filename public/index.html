@@ -102,8 +102,8 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
  .top{font-size:8px}.nav{top:32px}.navin{height:70px}.brand img{width:43px;height:43px;filter:none}.brand b{font-size:16px}.hero,.hero img{min-height:760px;height:760px}.hero-copy{top:52%;transform:translateY(-50%)}.hero h1{font-size:82px}.hero-sub{font-size:22px}.hero-stamp{display:none}.actions{flex-direction:column;align-items:flex-start}.btn{width:100%}.intro,.product-section,.process,.farm,.founders,.texture,.credentials,.final{padding:82px 0}.bigtitle{font-size:58px}.processphoto{height:430px}.farmphoto{height:450px}.quote{font-size:38px}.founder{border-right:0;border-bottom:1px solid rgba(255,255,255,.17)}.foot{grid-template-columns:1fr}.copyright{display:block}.copyright span{display:block;margin-top:8px}
 }
 
-.menu-btn{display:none;background:transparent;border:1px solid rgba(255,255,255,.45);color:#fffaf1;padding:9px 11px;letter-spacing:.12em;font-size:10px;text-transform:uppercase;cursor:pointer}
-.menu-btn span{margin-left:5px}
+.menu-btn{display:none;background:transparent;border:1px solid rgba(255,255,255,.45);color:#fffaf1;padding:8px 10px;width:40px;height:40px;letter-spacing:0;font-size:0;line-height:1;text-transform:none;cursor:pointer;border-radius:50%}
+.menu-btn span{display:none}
 .menu-overlay{position:fixed;inset:0;z-index:90;background:rgba(15,10,6,.72);display:none}
 .menu-overlay.show{display:block}
 .menu-drawer{position:absolute;left:0;top:0;height:100%;width:min(390px,88vw);background:var(--cream);color:var(--ink);padding:34px 28px;box-shadow:20px 0 50px rgba(0,0,0,.25)}
@@ -113,7 +113,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 .menu-list{display:flex;flex-direction:column}
 .menu-list a{padding:17px 0;border-bottom:1px solid rgba(91,59,34,.16);font:500 28px "Cormorant Garamond",serif}
 .menu-list small{display:block;font:600 9px "DM Sans",sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
-@media(max-width:900px){.menu-btn{display:inline-flex;align-items:center;justify-content:center}.navlinks{display:none}}
+@media(max-width:900px){.menu-btn{display:inline-flex;align-items:center;justify-content:center;grid-column:3;justify-self:end}.navlinks{display:none}}
 
 /* Final footer visual polish — spacious editorial layout */
 .site-footer{padding:82px 0 30px;background:#f7f2e8}
@@ -135,7 +135,7 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 <div class="top">RUDRAKSHA FARM · BARmer, RAJASTHAN · THE SOUL OF TRADITION</div>
 <header class="nav">
  <div class="container navin">
-  <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()">☰ <span>MENU</span></button>
+  <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()">☰</button>
   <div class="navlinks"><a href="#story">Story</a><a href="#process">Bilona</a><a href="#shop">Shop</a></div>
   <a href="#home" class="brand brand-logo-wrap"><span class="brand-logo-fallback" aria-hidden="true">R</span><img src="/logo.jpg?v=2" alt="Rudraksha — The Soul of Tradition" class="brand-logo" onerror="this.style.display='none';this.previousElementSibling.style.display='grid'"></a>
   <div class="navlinks right"><a href="/customer.html">LOGIN</a><a href="our-farm.html">Our Farm</a><a href="#credentials">Trust</a><a href="#shop">Order</a></div>
