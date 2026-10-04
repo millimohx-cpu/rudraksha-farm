@@ -284,6 +284,21 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 }
 
 
+
+/* MOBILE HEADER — REFERENCE MATCH */
+@media(max-width:600px){
+  .top{display:flex!important;position:fixed!important;top:0!important;height:28px!important;z-index:1100!important;background:#f4eee3!important;color:#173a2b!important;border-bottom:1px solid rgba(91,59,34,.12);font-size:7px!important;letter-spacing:.18em!important;white-space:nowrap}
+  .nav{position:fixed!important;top:28px!important;left:0!important;right:0!important;height:68px!important;z-index:1000!important}
+  .navin{height:68px!important;grid-template-columns:1fr auto 1fr!important}
+  .brand{grid-column:2!important;grid-row:1!important}
+  .brand-logo{width:138px!important;height:48px!important}
+  .menu-btn{grid-column:1!important;grid-row:1!important;justify-self:start!important;width:42px!important;height:42px!important}
+  .header-cart-btn{grid-column:3!important;grid-row:1!important;justify-self:end!important;width:42px!important;height:42px!important;display:grid!important;place-items:center!important;border:0!important;background:transparent!important;color:#17120e!important;cursor:pointer!important;font-size:22px!important;line-height:1!important}
+  .hero{margin-top:96px!important}
+}
+.header-cart-btn{display:none}
+
+
 /* FINAL MOBILE MENU BUTTON */
 @media(max-width:600px){
   .nav{position:fixed!important;top:0!important;left:0!important;right:0!important;z-index:1000!important}
@@ -300,6 +315,15 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   .menu-btn::before,.menu-btn::after{display:none!important}
 }
 
+
+/* FINAL MOBILE HEADER OVERRIDE */
+@media(max-width:600px){
+  .top{display:flex!important;height:28px!important;top:0!important}
+  .nav{top:28px!important;height:68px!important;position:fixed!important;z-index:1000!important}
+  .header-cart-btn{display:grid!important}
+  .hero{margin-top:96px!important}
+}
+
 </style>
 </head>
 <body>
@@ -308,8 +332,9 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
  <div class="container navin">
   <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()"><span class="hamburger-lines" aria-hidden="true"><i></i><i></i><i></i></span></button>
   <div class="navlinks"><a href="#story">Story</a><a href="#process">Bilona</a><a href="#shop">Shop</a></div>
-  <a href="#home" class="brand brand-logo-wrap"><span class="brand-logo-fallback" aria-hidden="true">R</span><img src="/logo.jpg?v=2" alt="Rudraksha — The Soul of Tradition" class="brand-logo" onerror="this.style.display='none';this.previousElementSibling.style.display='grid'"></a>
+  <a href="#home" class="brand brand-logo-wrap"><span class="brand-logo-fallback" aria-hidden="true">R</span><img src="/logo.jpg?v=3" alt="Rudraksha Farm — The Soul of Tradition" class="brand-logo" onerror="this.style.display='none';this.previousElementSibling.style.display='grid'"></a>
   <div class="navlinks right"><a href="/customer.html">LOGIN</a><a href="our-farm.html">Our Farm</a><a href="#credentials">Trust</a><a href="#shop">Order</a></div>
+  <button class="header-cart-btn" type="button" aria-label="Open cart" onclick="openCart()">🛒</button>
  </div>
 </header>
 
