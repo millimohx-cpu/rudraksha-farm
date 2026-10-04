@@ -298,7 +298,7 @@ async function api(req,res){
         return json(res,503,{ok:false,service:'rudraksha-farm',database:false,time:new Date().toISOString()});
       }
     }
-    if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>({id,name,pack,price,available:Number.isInteger(stock)?stock>0:false}))});
+    if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>({id,name,pack,price,stock,available:stock===null||stock>0}))});
     if(req.method==='POST'&&p==='/api/customer/register'){
       const b=await body(req),phone=normalizePhone(b.phone),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||'');
       if(!phone||password.length<8)return json(res,400,{error:'Valid mobile number and password of at least 8 characters are required'});
