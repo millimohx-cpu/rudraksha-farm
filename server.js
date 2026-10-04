@@ -10,13 +10,10 @@ if(fs.existsSync(envFile)){
 }
 const PORT=Number(process.env.PORT||3000);
 const ROOT=__dirname;
-const IS_PRODUCTION=process.env.NODE_ENV==='production'||process.env.RENDER==='true';
 const ADMIN_EMAIL=process.env.ADMIN_EMAIL||'';
 const ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||'';
 const SESSION_SECRET=process.env.SESSION_SECRET||'';
-if(IS_PRODUCTION&&(!ADMIN_EMAIL||!ADMIN_PASSWORD||SESSION_SECRET.length<32)){
-  throw Error('Production security configuration is incomplete: set ADMIN_EMAIL, ADMIN_PASSWORD and a SESSION_SECRET of at least 32 characters.');
-}
+if(SESSION_SECRET.length<32)console.warn('SESSION_SECRET is not configured; customer password authentication is unavailable until it is set.');
 const DATABASE_URL=process.env.DATABASE_URL||'';
 const CASHFREE_APP_ID=process.env.CASHFREE_APP_ID||'';
 const CASHFREE_SECRET_KEY=process.env.CASHFREE_SECRET_KEY||'';
