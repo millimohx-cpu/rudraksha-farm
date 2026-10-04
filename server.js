@@ -10,9 +10,13 @@ if(fs.existsSync(envFile)){
 }
 const PORT=Number(process.env.PORT||3000);
 const ROOT=__dirname;
-const ADMIN_EMAIL=process.env.ADMIN_EMAIL||'admin@example.com';
-const ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||'CHANGE_THIS_BEFORE_DEPLOY';
-const SESSION_SECRET=process.env.SESSION_SECRET||'CHANGE_THIS_TO_A_LONG_RANDOM_SECRET';
+const IS_PRODUCTION=process.env.NODE_ENV==='production'||process.env.RENDER==='true';
+const ADMIN_EMAIL=process.env.ADMIN_EMAIL||'';
+const ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||'';
+const SESSION_SECRET=process.env.SESSION_SECRET||'';
+if(IS_PRODUCTION&&(!ADMIN_EMAIL||!ADMIN_PASSWORD||SESSION_SECRET.length<32)){
+  throw Error('Production security configuration is incomplete: set ADMIN_EMAIL, ADMIN_PASSWORD and a SESSION_SECRET of at least 32 characters.');
+}
 const DATABASE_URL=process.env.DATABASE_URL||'';
 const CASHFREE_APP_ID=process.env.CASHFREE_APP_ID||'';
 const CASHFREE_SECRET_KEY=process.env.CASHFREE_SECRET_KEY||'';
@@ -638,6 +642,8 @@ const server=http.createServer(async(req,res)=>{
   res.setHeader('X-Frame-Options','SAMEORIGIN');
   res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy','camera=(),microphone=(),geolocation=()');
+  res.setHeader('Cross-Origin-Opener-Policy','same-origin-allow-popups');
+  if(req.headers['x-forwarded-proto']==='https')res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
   if(req.url.startsWith('/api/')){const r=await api(req,res);if(r===null)json(res,404,{error:'API route not found'})}
   else serve(req,res);
 });
