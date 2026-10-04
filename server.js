@@ -82,6 +82,18 @@ async function initDb(){
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit_logs(created_at DESC);
+    CREATE TABLE IF NOT EXISTS coupons(
+      id BIGSERIAL PRIMARY KEY,
+      code TEXT NOT NULL UNIQUE,
+      type TEXT NOT NULL CHECK (type IN ('percent','fixed')),
+      value NUMERIC(10,2) NOT NULL CHECK (value > 0),
+      min_subtotal NUMERIC(10,2) NOT NULL DEFAULT 0,
+      max_uses INTEGER,
+      used_count INTEGER NOT NULL DEFAULT 0,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      expires_at TIMESTAMPTZ
+    );
+    CREATE INDEX IF NOT EXISTS idx_coupons_active ON coupons(active,expires_at);
     CREATE TABLE IF NOT EXISTS order_notifications(
       id BIGSERIAL PRIMARY KEY,
       order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
