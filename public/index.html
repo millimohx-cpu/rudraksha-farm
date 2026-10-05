@@ -324,6 +324,77 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   .hero{margin-top:96px!important}
 }
 
+
+/* MOBILE HEADER FINAL STABLE FIX — menu + centered logo + cart */
+@media(max-width:600px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  .top{
+    display:flex!important;position:fixed!important;top:0!important;left:0!important;right:0!important;
+    height:28px!important;z-index:2100!important;
+  }
+  .nav{
+    position:fixed!important;top:28px!important;left:0!important;right:0!important;
+    height:68px!important;z-index:2000!important;overflow:visible!important;
+  }
+  .navin{
+    position:relative!important;width:100%!important;height:68px!important;
+    display:block!important;padding:0 8px!important;
+  }
+  .brand{
+    position:absolute!important;left:50%!important;top:50%!important;
+    transform:translate(-50%,-50%)!important;
+    width:124px!important;height:54px!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    z-index:2001!important;
+  }
+  .brand-logo-wrap{width:124px!important;height:54px!important}
+  .brand-logo{
+    display:block!important;width:124px!important;height:54px!important;
+    object-fit:contain!important;object-position:center!important;
+  }
+  .menu-btn{
+    position:absolute!important;left:8px!important;top:12px!important;
+    width:44px!important;height:44px!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    z-index:2101!important;border:0!important;background:transparent!important;
+    color:#17120e!important;padding:0!important;cursor:pointer!important;
+  }
+  .hamburger-lines{
+    display:flex!important;flex-direction:column!important;gap:5px!important;
+    width:23px!important;height:auto!important;position:static!important;
+  }
+  .hamburger-lines i{
+    display:block!important;width:23px!important;height:2px!important;
+    background:#17120e!important;border-radius:2px!important;position:static!important;
+  }
+  .header-cart-btn{
+    position:absolute!important;right:8px!important;top:12px!important;
+    width:44px!important;height:44px!important;
+    display:grid!important;place-items:center!important;
+    z-index:2101!important;border:0!important;background:transparent!important;
+    color:#17120e!important;padding:0!important;font-size:21px!important;
+    line-height:1!important;cursor:pointer!important;
+  }
+  .hero{margin-top:96px!important}
+  .menu-overlay{
+    position:fixed!important;inset:0!important;z-index:2050!important;
+    display:none!important;background:rgba(15,10,6,.72)!important;
+  }
+  .menu-overlay.show{display:block!important}
+  .menu-drawer{
+    position:absolute!important;left:0!important;top:0!important;
+    width:min(360px,88vw)!important;height:100%!important;
+    padding:34px 24px!important;overflow-y:auto!important;
+    background:#f4eee3!important;z-index:2051!important;
+  }
+}
+
+/* Prevent accidental horizontal overflow from floating controls */
+@media(max-width:600px){
+  .cart-trigger{right:10px!important;max-width:calc(100vw - 20px)!important}
+  .wa{right:10px!important;max-width:calc(100vw - 20px)!important}
+}
+
 </style>
 </head>
 <body>
@@ -332,14 +403,14 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
  <div class="container navin">
   <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()"><span class="hamburger-lines" aria-hidden="true"><i></i><i></i><i></i></span></button>
   <div class="navlinks"><a href="#story">Story</a><a href="#process">Bilona</a><a href="#shop">Shop</a></div>
-  <a href="#home" class="brand brand-logo-wrap"><span class="brand-logo-fallback" aria-hidden="true">R</span><img src="/logo.jpg?v=3" alt="Rudraksha Farm — The Soul of Tradition" class="brand-logo" onerror="this.style.display='none';this.previousElementSibling.style.display='grid'"></a>
+  <a href="#home" class="brand brand-logo-wrap"><span class="brand-logo-fallback" aria-hidden="true">R</span><img src="/logo.jpg?v=4" alt="Rudraksha Farm — The Soul of Tradition" class="brand-logo" onerror="this.style.display='none';this.previousElementSibling.style.display='grid'"></a>
   <div class="navlinks right"><a href="/customer.html">LOGIN</a><a href="our-farm.html">Our Farm</a><a href="#credentials">Trust</a><a href="#shop">Order</a></div>
   <button class="header-cart-btn" type="button" aria-label="Open cart" onclick="openCart()">🛒</button>
  </div>
 </header>
 
 
-<div class="menu-overlay" id="menuOverlay" onclick="if(event.target===this)closeMenu()">
+<div class="menu-overlay" id="menuOverlay" aria-hidden="true" onclick="if(event.target===this)closeMenu()">
  <aside class="menu-drawer">
   <div class="menu-head"><b>RUDRAKSHA</b><button class="menu-close" onclick="closeMenu()">×</button></div>
   <nav class="menu-list">
@@ -546,8 +617,8 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   </aside>
 </div>
  <script>
-function openMenu(){document.getElementById("menuOverlay").classList.add("show");document.body.style.overflow="hidden"}
-function closeMenu(){document.getElementById("menuOverlay").classList.remove("show");document.body.style.overflow=""}
+function openMenu(){const m=document.getElementById("menuOverlay");if(!m)return;m.classList.add("show");m.setAttribute("aria-hidden","false");document.body.style.overflow="hidden"}
+function closeMenu(){const m=document.getElementById("menuOverlay");if(!m)return;m.classList.remove("show");m.setAttribute("aria-hidden","true");document.body.style.overflow=""}
 let cart=[];let appliedCoupon="";
 const catalogById=new Map();
 async function syncCatalog(){
