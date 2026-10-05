@@ -395,6 +395,35 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
   .wa{right:10px!important;max-width:calc(100vw - 20px)!important}
 }
 
+
+/* MOBILE DRAWER — ROSIER-STYLE CONTENT LAYOUT */
+@media(max-width:600px){
+  .menu-drawer{
+    display:flex!important;flex-direction:column!important;
+    width:min(460px,88vw)!important;padding:32px 18px 18px!important;
+    background:#f7f2e8!important;color:#211a14!important;
+  }
+  .menu-head{margin-bottom:20px!important;padding:0 0 4px!important}
+  .menu-head b{font-size:30px!important;letter-spacing:.12em!important}
+  .menu-close{font-size:30px!important;border:0!important;width:40px!important;height:40px!important;color:#9a6b25!important}
+  .menu-list{display:flex!important;flex-direction:column!important}
+  .menu-list a{
+    display:flex!important;align-items:center!important;justify-content:space-between!important;
+    padding:16px 0!important;border:0!important;
+    font:500 17px/1.2 "DM Sans",sans-serif!important;color:#80613a!important;
+  }
+  .menu-list a:hover{color:#b68a3b!important}
+  .menu-shop-link span{font-size:30px!important;line-height:1!important;color:#9a6b25!important}
+  .menu-account{margin-top:auto!important;padding-top:34px!important}
+  .menu-account h3{font:600 21px "DM Sans",sans-serif!important;color:#9a6b25!important;margin:0 0 22px!important}
+  .menu-account a{display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:48px!important;border-radius:25px!important;font:600 12px "DM Sans",sans-serif!important;letter-spacing:.04em!important}
+  .menu-login{background:#b66a09!important;color:#fff!important;border:1px solid #b66a09!important;margin-bottom:12px!important}
+  .menu-register{background:transparent!important;color:#9a6b25!important;border:1px solid #b68a3b!important}
+  .menu-settings{display:flex!important;gap:22px!important;padding:25px 0 3px!important}
+  .menu-settings button{border:0!important;background:transparent!important;padding:0!important;color:#806f5b!important;font:400 11px "DM Sans",sans-serif!important;white-space:nowrap!important}
+  .menu-settings span{font-size:14px!important;margin-left:3px!important}
+}
+
 </style>
 </head>
 <body>
@@ -412,17 +441,34 @@ footer{background:#0d0906;color:#bdaF9e;padding:55px 0 25px}.foot{display:grid;g
 
 <div class="menu-overlay" id="menuOverlay" aria-hidden="true" onclick="if(event.target===this)closeMenu()">
  <aside class="menu-drawer">
-  <div class="menu-head"><b>RUDRAKSHA</b><button class="menu-close" onclick="closeMenu()">×</button></div>
-  <nav class="menu-list">
-   <a href="index.html#home" onclick="closeMenu()"><small>01 / Home</small>Home</a>
-   <a href="index.html#story" onclick="closeMenu()"><small>02 / Story</small>Our Story</a>
-   <a href="our-farm.html"><small>03 / The Farm</small>Our Farm</a>
-   <a href="index.html#process" onclick="closeMenu()"><small>04 / Tradition</small>Bilona Method</a>
-   <a href="index.html#shop" onclick="closeMenu()"><small>05 / Collection</small>Shop Ghee</a>
-   <a href="index.html#credentials" onclick="closeMenu()"><small>06 / Trust</small>Trust & Transparency</a>
+  <div class="menu-head">
+   <b>RUDRAKSHA</b>
+   <button class="menu-close" type="button" aria-label="Close menu" onclick="closeMenu()">×</button>
+  </div>
+
+  <nav class="menu-list" aria-label="Mobile menu">
+   <a href="index.html#home" onclick="closeMenu()">Home</a>
+   <a class="menu-shop-link" href="index.html#shop" onclick="closeMenu()">Shop <span aria-hidden="true">›</span></a>
+   <a href="index.html#story" onclick="closeMenu()">Our Story</a>
+   <a href="index.html#credentials" onclick="closeMenu()">Lab Reports</a>
+   <a href="contact.html" onclick="closeMenu()">Contact Us</a>
+   <a href="index.html#shop" onclick="closeMenu()">Hampers</a>
   </nav>
+
+  <div class="menu-account">
+   <h3>My Account</h3>
+   <a class="menu-login" href="customer.html">LOG IN</a>
+   <a class="menu-register" href="customer.html#register">REGISTER</a>
+  </div>
+
+  <div class="menu-settings">
+   <button type="button" aria-label="Select country">🇮🇳 India (INR ₹) <span>⌄</span></button>
+   <button type="button" aria-label="Select language">English <span>⌄</span></button>
+  </div>
  </aside>
 </div>
+
+
 
 <section class="hero" id="home">
  <img src="hero.jpg" alt="Rudraksha Farm ghee" fetchpriority="high" decoding="auto" width="1536" height="512">
