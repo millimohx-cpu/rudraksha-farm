@@ -32,7 +32,7 @@
 {"@type":"ListItem","position":3,"item":{"@type":"Product","name":"A2 Bilona Desi Cow Ghee — 2.5 kg","image":"https://rudrakshafarm.in/product-story.jpg","description":"A2 Bilona Desi Cow Ghee, hand-churned using the traditional Bilona method from Gir cow milk at Rudraksha Farm, Barmer, Rajasthan.","brand":{"@type":"Brand","name":"Rudraksha Farm"},"offers":{"@type":"Offer","url":"https://rudrakshafarm.in/","priceCurrency":"INR","price":"4999","itemCondition":"https://schema.org/NewCondition","shippingDetails":{"@type":"OfferShippingDetails","hasShippingService":{"@id":"https://rudrakshafarm.in/#shipping-service"}},"hasMerchantReturnPolicy":{"@id":"https://rudrakshafarm.in/#return-policy"}}}}
 ]}
 </script>
-<link rel="preload" as="image" href="product-lifestyle.jpg" fetchpriority="high" type="image/jpeg">
+<link rel="preload" as="image" href="hero.jpg" fetchpriority="high" type="image/jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -512,18 +512,12 @@ body{background:var(--rf-cream)}
  .menu-drawer{background:#f7f2e8!important}
 }
 
-/* RUDRAKSHA FARM — HERO REFERENCE FIX */
+/* RUDRAKSHA FARM — EXACT MOBILE ENTRANCE IMAGE */
 @media(max-width:600px){
-  .hero{min-height:calc(100svh - 32px);height:calc(100svh - 32px);background:#17120e}
-  .hero img{height:100%;min-height:100%;object-fit:cover;object-position:center center;opacity:.72;filter:saturate(.9) contrast(1.02)}
-  .hero:after{background:linear-gradient(90deg,rgba(15,10,6,.68),rgba(15,10,6,.22) 72%),linear-gradient(0deg,rgba(15,10,6,.72),rgba(15,10,6,.08) 58%)}
-  .hero-copy{left:24px;right:24px;top:54%;transform:translateY(-50%);max-width:none}
-  .hero h1{font-size:clamp(58px,18vw,92px);line-height:.78;margin:16px 0 18px}
-  .hero-sub{font-size:25px;line-height:1}
-  .hero-tag{font-size:17px;margin-top:12px}
-  .actions{gap:8px;margin-top:24px;flex-wrap:wrap}
-  .btn{padding:12px 15px;font-size:9px}
-  .hero-stamp{display:none}
+  .hero{height:auto;min-height:0;background:#17120e;overflow:hidden}
+  .hero img{display:block;width:100%;height:auto;min-height:0;object-fit:contain;object-position:center;opacity:1;filter:none}
+  .hero:after{display:none}
+  .hero-copy,.hero-stamp{display:none!important}
 }
 </style>
 </head>
@@ -572,7 +566,7 @@ body{background:var(--rf-cream)}
 
 
 <section class="hero" id="home">
- <img src="product-lifestyle.jpg" alt="Rudraksha Farm ghee" fetchpriority="high" decoding="auto" width="1536" height="512">
+ <img src="hero.jpg" alt="Rudraksha Farm ghee" fetchpriority="high" decoding="auto" width="1536" height="512">
  <div class="hero-copy">
   <div class="kicker">A2 Bilona · Desi Cow Ghee</div>
   <h1><span>Rudraksha</span></h1>
