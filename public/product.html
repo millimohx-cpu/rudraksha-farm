@@ -70,7 +70,7 @@ const images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEu
 function setImage(i){document.getElementById("mainImage").src=images[i];document.querySelectorAll(".thumb").forEach((b,n)=>b.classList.toggle("active",n===i))}
 let qty=1;function changeQty(d){qty=Math.max(1,Math.min(99,qty+d));document.getElementById("qty").textContent=qty}
 function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-500");if(x)x.qty+=qty;else cart.push({productId:"ghee-500",name:"500 ML A2 Bilona Ghee",price:1149,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
-function buyNow(){addToCart();setTimeout(()=>location.href="index.html#shop",250)}
+function buyNow(){location.href="index.html?buy=ghee-500&qty="+qty+"#shop"}
 </script>
 </body>
 </html>
