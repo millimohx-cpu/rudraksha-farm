@@ -397,10 +397,10 @@ async function api(req,res){
         const hash=await new Promise((resolve,reject)=>crypto.scrypt(password,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
         await pool.query('INSERT INTO customers(phone,name,email,password_hash,created_at,last_login_at) VALUES($1,$2,$3,$4,NOW(),NOW())',[phone,String(b.customer.name||'').trim()||null,String(b.customer.email||'').trim().toLowerCase()||null,hash]);
         customerToken=token();
-        await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL '30 days')',[sessionHash(customerToken),phone]);
+        await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[sessionHash(customerToken),phone]);
       }else if(loggedPhone===phone){
         customerToken=req.headers.authorization.slice(7);
-        await pool.query('UPDATE customers SET name=COALESCE(NULLIF($1,''),name),email=COALESCE(NULLIF($2,''),email),last_login_at=NOW() WHERE phone=$3',[String(b.customer.name||'').trim(),String(b.customer.email||'').trim().toLowerCase(),phone]);
+        await pool.query('UPDATE customers SET name=COALESCE(NULLIF($1,\'\'),name),email=COALESCE(NULLIF($2,\'\'),email),last_login_at=NOW() WHERE phone=$3',[String(b.customer.name||'').trim(),String(b.customer.email||'').trim().toLowerCase(),phone]);
       }else{
         const password=String(b.accountPassword||'');
         if(!password)return json(res,409,{error:'An account already exists for this mobile number. Please login first or enter your account password.'});
@@ -408,7 +408,7 @@ async function api(req,res){
         const a=Buffer.from(hash,'hex'),bhash=Buffer.from(existingCustomer.rows[0].password_hash||'','hex');
         if(!bhash.length||a.length!==bhash.length||!crypto.timingSafeEqual(a,bhash))return json(res,401,{error:'Incorrect account password.'});
         customerToken=token();
-        await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL '30 days')',[sessionHash(customerToken),phone]);
+        await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[sessionHash(customerToken),phone]);
       }
       b.customer.phone=phone;
       const id=orderId(),accessToken=token(),customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');
