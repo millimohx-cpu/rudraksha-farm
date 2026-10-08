@@ -926,3 +926,13 @@ handleCashfreeReturn();
   .hero img{display:block!important;width:100%!important;height:auto!important;min-height:0!important;object-fit:cover!important;opacity:1!important;filter:none!important;}
   .hero:after{display:none!important}
 }
+
+/* PREVIEW — DEVICE BREAKPOINT FIX */
+@media screen and (max-width:767px){
+  .reference-hero{width:100%!important;min-height:0!important;height:auto!important;background:transparent!important;}
+  .reference-hero>img{width:100%!important;height:auto!important;display:block!important;object-fit:cover!important;}
+}
+@media screen and (min-width:768px){
+  .reference-hero{min-height:0!important;height:auto!important;}
+  .reference-hero>img{width:100%!important;height:auto!important;display:block!important;object-fit:cover!important;}
+}
