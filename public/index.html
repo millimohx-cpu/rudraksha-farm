@@ -909,3 +909,20 @@ syncCatalog();
 handleCashfreeReturn();
  </script>
    
+/* LIVE — REMOVE HERO BLACK SPACE ON MOBILE */
+@media(max-width:600px){
+  .hero{
+    margin-top:96px!important;
+    min-height:0!important;
+    height:auto!important;
+    background:transparent!important;
+  }
+  .hero img{
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    object-fit:contain!important;
+  }
+  .hero:after{display:none!important}
+}
