@@ -936,3 +936,20 @@ handleCashfreeReturn();
   .reference-hero{min-height:0!important;height:auto!important;}
   .reference-hero>img{width:100%!important;height:auto!important;display:block!important;object-fit:cover!important;}
 }
+
+
+/* PREVIEW — MOBILE REMOVE MARKED ARTIFACTS UNDER HEADER */
+@media screen and (max-width:767px){
+  .reference-hero{position:relative;overflow:hidden!important;}
+  .reference-hero:before{
+    content:"";
+    position:absolute;
+    z-index:3;
+    top:0;
+    left:55%;
+    width:40%;
+    height:44px;
+    background:#f4eee3;
+    pointer-events:none;
+  }
+}
