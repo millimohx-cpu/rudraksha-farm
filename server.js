@@ -127,12 +127,13 @@ async function initDb(){
     await pool.query(
       'INSERT INTO products(id,name,pack,price,stock,active) VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12),($13,$14,$15,$16,$17,$18)',
       [
-        'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',999,null,true,
+        'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',1149,null,true,
         'ghee-1000','A2 Bilona Desi Cow Ghee','1 kg',1999,null,true,
         'ghee-2500','A2 Bilona Desi Cow Ghee','2.5 kg',4999,null,true
       ]
     );
   }
+  await pool.query("UPDATE products SET price=1149 WHERE id='ghee-500'");
 }
 async function recordOrderNotification(orderId,event){
   await pool.query('INSERT INTO order_notifications(order_id,event) SELECT $1,$2 WHERE NOT EXISTS (SELECT 1 FROM order_notifications WHERE order_id=$1 AND event=$2)',[orderId,event]);
@@ -231,7 +232,7 @@ async function calc(items,couponCode){
     subtotal+=unitPrice*q;
     normalized.push({productId:p.id,name:p.name,pack:p.pack,unitPrice,quantity:q});
   }  if(!normalized.length)throw Error('Cart is empty');
-  const shipping=subtotal>=1999?0:101;
+  const shipping=0;
   let discount=0,coupon=null;
   if(couponCode){
     const code=String(couponCode).trim().toUpperCase();
