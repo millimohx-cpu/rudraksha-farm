@@ -385,6 +385,32 @@ async function api(req,res){
       const b=await body(req);
       if(!b.customer?.name||!b.customer?.phone||!b.customer?.address)return json(res,400,{error:'Customer name, phone and address are required'});
       let c;try{c=await calc(b.items,b.couponCode)}catch(e){return json(res,400,{error:e.message})}
+      const phone=normalizePhone(b.customer.phone);
+      if(!phone)return json(res,400,{error:'Enter a valid 10 digit mobile number'});
+      const loggedPhone=await customerAuth(req);
+      if(loggedPhone&&loggedPhone!==phone)return json(res,403,{error:'Checkout mobile number does not match the logged-in account.'});
+      let customerToken=null;
+      const existingCustomer=await pool.query('SELECT phone,name,email,password_hash FROM customers WHERE phone=$1',[phone]);
+      if(!existingCustomer.rowCount){
+        const password=String(b.accountPassword||'');
+        if(password.length<8)return json(res,400,{error:'Create an account password of at least 8 characters to continue.'});
+        const hash=await new Promise((resolve,reject)=>crypto.scrypt(password,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
+        await pool.query('INSERT INTO customers(phone,name,email,password_hash,created_at,last_login_at) VALUES($1,$2,$3,$4,NOW(),NOW())',[phone,String(b.customer.name||'').trim()||null,String(b.customer.email||'').trim().toLowerCase()||null,hash]);
+        customerToken=token();
+        await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL '30 days')',[sessionHash(customerToken),phone]);
+      }else if(loggedPhone===phone){
+        customerToken=req.headers.authorization.slice(7);
+        await pool.query('UPDATE customers SET name=COALESCE(NULLIF($1,''),name),email=COALESCE(NULLIF($2,''),email),last_login_at=NOW() WHERE phone=$3',[String(b.customer.name||'').trim(),String(b.customer.email||'').trim().toLowerCase(),phone]);
+      }else{
+        const password=String(b.accountPassword||'');
+        if(!password)return json(res,409,{error:'An account already exists for this mobile number. Please login first or enter your account password.'});
+        const hash=await new Promise((resolve,reject)=>crypto.scrypt(password,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
+        const a=Buffer.from(hash,'hex'),bhash=Buffer.from(existingCustomer.rows[0].password_hash||'','hex');
+        if(!bhash.length||a.length!==bhash.length||!crypto.timingSafeEqual(a,bhash))return json(res,401,{error:'Incorrect account password.'});
+        customerToken=token();
+        await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL '30 days')',[sessionHash(customerToken),phone]);
+      }
+      b.customer.phone=phone;
       const id=orderId(),accessToken=token(),customerId='rf_'+id.toLowerCase().replace(/[^a-z0-9]/g,'_');
       const payload={order_id:id,order_amount:Number(c.total.toFixed(2)),order_currency:'INR',customer_details:{customer_id:customerId,customer_name:b.customer.name,customer_phone:b.customer.phone,customer_email:b.customer.email||''},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/cashfree-return?order_id={order_id}&access_token=${accessToken}`}};
       if(PUBLIC_BASE_URL)payload.order_meta.notify_url=`${PUBLIC_BASE_URL}/api/payments/cashfree/webhook`;
@@ -392,7 +418,7 @@ async function api(req,res){
         const cf=await cashfreeFetch('/orders',{method:'POST',body:JSON.stringify(payload)});
         const o={id,createdAt:new Date().toISOString(),customer:b.customer,items:c.items,subtotal:c.subtotal,shipping:c.shipping,discount:c.discount||0,couponCode:c.couponCode||null,total:c.total,paymentStatus:'pending',status:'received',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null,orderAccessToken:accessToken};
         await saveOrder(o);
-        return json(res,201,{orderId:id,accessToken,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total});
+        return json(res,201,{orderId:id,accessToken,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total,customerToken});
       }catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}
     }
     if(req.method==='GET'&&p==='/cashfree-return'){
