@@ -904,6 +904,23 @@ async function submitOrder(e){
     payButton.textContent="PAY SECURELY WITH CASHFREE";
   }
 }
+function handleDirectBuy(){
+  const params=new URLSearchParams(window.location.search);
+  const productId=params.get("buy");
+  if(!productId)return;
+  const quantity=Math.max(1,Math.min(99,Number(params.get("qty")||1)));
+  const products={
+    "ghee-500":{name:"500 ML A2 Bilona Ghee",price:1149,img:"https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8ff3a6ee-56a3-4ba0-b064-358954061d3a.jpg"},
+    "ghee-1000":{name:"1 KG A2 Bilona Ghee",price:2199,img:"https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/1c8e9d74-5e63-4829-81a0-ae876231edfb.jpg"}
+  };
+  const p=products[productId];
+  if(!p)return;
+  cart=[{productId,name:p.name,price:p.price,img:p.img,qty:quantity}];
+  render();
+  openCheckout();
+  history.replaceState({},document.title,"index.html#shop");
+}
+
 async function handleCashfreeReturn(){
   const params=new URLSearchParams(window.location.search);
   if(params.get("cashfree_return")!=="1")return;
@@ -918,6 +935,7 @@ function set1000Gallery(i){const main=document.getElementById("g1000main");if(!m
 const gallery500Images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8ff3a6ee-56a3-4ba0-b064-358954061d3a.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8a966b5f-c068-4a38-97ce-3f60a3389b62.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/b4b605dd-05fa-4303-aa29-e8d5604a7a82.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/2320b0c9-72cf-4051-b745-5a1ae7fb9abd.jpg"];function set500Gallery(i){const main=document.getElementById("g500main");if(!main)return;main.src=gallery500Images[i];document.querySelectorAll(".g500thumb").forEach((b,n)=>b.classList.toggle("active",n===i));}
 
 syncCatalog();
+handleDirectBuy();
 handleCashfreeReturn();
  </script>
    
