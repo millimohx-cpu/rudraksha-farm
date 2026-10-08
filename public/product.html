@@ -41,11 +41,11 @@
       <div class="eyebrow">RUDRAKSHA FARM · 500 ML</div>
       <h1 class="title">A2 Bilona Desi Cow Ghee</h1>
       <div class="rating"><span class="stars">★★★★★</span><span>Traditional Bilona process</span></div>
-      <div class="price">₹999</div>
+      <div class="price">₹1,149</div>
       <div class="tax">MRP (Incl. of all taxes)</div>
 
       <div class="pack-title">Choose Pack</div>
-      <div class="packs"><div class="pack active">500 ml<br><small>₹999</small></div><div class="pack">1 kg<br><small>₹1,999</small></div><div class="pack">2.5 kg<br><small>₹4,999</small></div></div>
+      <div class="packs"><div class="pack active">500 ml<br><small>₹1,149</small></div><div class="pack">1 kg<br><small>₹1,999</small></div><div class="pack">2.5 kg<br><small>₹4,999</small></div></div>
 
       <div class="qtyrow"><div class="qty"><button onclick="changeQty(-1)">−</button><span id="qty">1</span><button onclick="changeQty(1)">+</button></div><button class="cta" onclick="addToCart()">Add to cart</button></div>
       <button class="buy" onclick="buyNow()">Buy Now</button>
@@ -69,7 +69,7 @@
 const images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8ff3a6ee-56a3-4ba0-b064-358954061d3a.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8a966b5f-c068-4a38-97ce-3f60a3389b62.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/b4b605dd-05fa-4303-aa29-e8d5604a7a82.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/2320b0c9-72cf-4051-b745-5a1ae7fb9abd.jpg"];
 function setImage(i){document.getElementById("mainImage").src=images[i];document.querySelectorAll(".thumb").forEach((b,n)=>b.classList.toggle("active",n===i))}
 let qty=1;function changeQty(d){qty=Math.max(1,Math.min(99,qty+d));document.getElementById("qty").textContent=qty}
-function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-500");if(x)x.qty+=qty;else cart.push({productId:"ghee-500",name:"500 ML A2 Bilona Ghee",price:999,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
+function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-500");if(x)x.qty+=qty;else cart.push({productId:"ghee-500",name:"500 ML A2 Bilona Ghee",price:1149,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
 function buyNow(){addToCart();setTimeout(()=>location.href="index.html#shop",250)}
 </script>
 </body>
