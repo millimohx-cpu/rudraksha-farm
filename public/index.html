@@ -913,8 +913,7 @@ async function handleCashfreeReturn(){
 }
 
 
-const gallery500Images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/6ad6d36b-da9d-4dc8-938e-fbf90128b85f.png?v=500ml-final-2","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/6926e7e8-c85f-456d-974e-277128307816.jpg?v=500ml-final-2","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/d4d73eaa-e879-4d30-9d3a-e14849e60308.jpg?v=500ml-final-2","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/4f1522cd-fb3b-4987-8b4f-f819b83287eb.jpg?v=500ml-final-2"];
-function set500Gallery(i){const main=document.getElementById("g500main");if(!main)return;main.src=gallery500Images[i];document.querySelectorAll(".g500thumb").forEach((b,n)=>b.classList.toggle("active",n===i));}
+const gallery500Images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8ff3a6ee-56a3-4ba0-b064-358954061d3a.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8a966b5f-c068-4a38-97ce-3f60a3389b62.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/deb4207e-cee6-4152-9a36-6addc2dea143.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/b4b605dd-05fa-4303-aa29-e8d5604a7a82.jpg"];function set500Gallery(i){const main=document.getElementById("g500main");if(!main)return;main.src=gallery500Images[i];document.querySelectorAll(".g500thumb").forEach((b,n)=>b.classList.toggle("active",n===i));}
 
 syncCatalog();
 handleCashfreeReturn();
