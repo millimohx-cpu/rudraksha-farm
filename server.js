@@ -128,12 +128,13 @@ async function initDb(){
       'INSERT INTO products(id,name,pack,price,stock,active) VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12),($13,$14,$15,$16,$17,$18)',
       [
         'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',1149,null,true,
-        'ghee-1000','A2 Bilona Desi Cow Ghee','1 kg',1999,null,true,
+        'ghee-1000','A2 Bilona Desi Cow Ghee','1 kg',2199,null,true,
         'ghee-2500','A2 Bilona Desi Cow Ghee','2.5 kg',4999,null,true
       ]
     );
   }
   await pool.query("UPDATE products SET price=1149 WHERE id='ghee-500'");
+  await pool.query("UPDATE products SET price=2199 WHERE id='ghee-1000'");
 }
 async function recordOrderNotification(orderId,event){
   await pool.query('INSERT INTO order_notifications(order_id,event) SELECT $1,$2 WHERE NOT EXISTS (SELECT 1 FROM order_notifications WHERE order_id=$1 AND event=$2)',[orderId,event]);
