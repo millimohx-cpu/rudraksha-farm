@@ -739,6 +739,15 @@ body{background:var(--rf-cream)}
         style="width:100%;padding:13px;margin:7px 0 15px"
         placeholder="Email address">
 
+      <div id="accountPasswordWrap">
+        <label>Account Password</label>
+        <input id="accountPassword" required
+          type="password" minlength="8" autocomplete="new-password"
+          style="width:100%;padding:13px;margin:7px 0 6px"
+          placeholder="Minimum 8 characters">
+        <p id="accountPasswordNote" style="font-size:12px;color:#887a69;margin:0 0 15px">Your account will be created automatically so you can track orders and view order history.</p>
+      </div>
+
       <label>Coupon Code (optional)</label><div style="display:flex;gap:8px;margin:7px 0 15px"><input id="couponCode" style="flex:1;padding:13px" placeholder="Enter coupon code"><button type="button" class="btn alt" onclick="applyCoupon()">Apply</button></div><p id="couponMessage" style="font-size:12px;margin:-8px 0 14px;color:#887a69"></p>
       <label>Address</label>
       <textarea id="customerAddress" required
@@ -808,7 +817,7 @@ function render(){
 }
 function qty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);render()}
 function closeCart(){document.getElementById("cart").classList.remove("show")}
-async function prefillCustomer(){try{const t=localStorage.getItem("rf_customer_token");if(!t)return;const r=await fetch("/api/customer/me",{headers:{Authorization:"Bearer "+t}});if(!r.ok)return;const d=await r.json();if(d.customer){document.getElementById("customerName").value=d.customer.name||"";document.getElementById("customerPhone").value=(d.customer.phone||"").replace(/^\+91/,"");document.getElementById("customerEmail").value=d.customer.email||"";document.getElementById("customerPhone").readOnly=true;}}catch(e){console.warn("Customer prefill skipped",e)}}
+async function prefillCustomer(){try{const t=localStorage.getItem("rf_customer_token");const wrap=document.getElementById("accountPasswordWrap");const pass=document.getElementById("accountPassword");if(!t){if(wrap){wrap.classList.remove("hidden");pass.required=true}return}const r=await fetch("/api/customer/me",{headers:{Authorization:"Bearer "+t}});if(!r.ok){localStorage.removeItem("rf_customer_token");if(wrap){wrap.classList.remove("hidden");pass.required=true}return}const d=await r.json();if(d.customer){document.getElementById("customerName").value=d.customer.name||"";document.getElementById("customerPhone").value=(d.customer.phone||"").replace(/^\+91/,"");document.getElementById("customerEmail").value=d.customer.email||"";document.getElementById("customerPhone").readOnly=true;if(wrap){wrap.classList.add("hidden");pass.required=false}}}catch(e){console.warn("Customer prefill skipped",e)}}
 function openCheckout(){
   if(!cart.length){
     alert("Your cart is empty.");
@@ -853,6 +862,12 @@ async function submitOrder(e){
   const phone=document.getElementById("customerPhone").value.trim();
   const email=document.getElementById("customerEmail").value.trim();
   const address=document.getElementById("customerAddress").value.trim();
+  const accountPassword=document.getElementById("accountPassword").value;
+
+  if(!localStorage.getItem("rf_customer_token") && accountPassword.length<8){
+    message.textContent="Please create an account password of at least 8 characters.";
+    return;
+  }
 
   payButton.disabled=true;
   payButton.textContent="CREATING SECURE PAYMENT...";
@@ -862,9 +877,11 @@ async function submitOrder(e){
     const res=await fetch("/api/payments/cashfree/order",{
       method:"POST",
       headers:{
-        "Content-Type":"application/json"
+        "Content-Type":"application/json",
+        ...(localStorage.getItem("rf_customer_token")?{Authorization:"Bearer "+localStorage.getItem("rf_customer_token")}:{})
       },
       body:JSON.stringify({
+        accountPassword:accountPassword,
         customer:{
           name:name,
           phone:phone,
@@ -883,6 +900,9 @@ async function submitOrder(e){
 
     if(!res.ok){
       throw new Error(out.error||"Unable to create payment");
+    }
+    if(out.customerToken){
+      localStorage.setItem("rf_customer_token",out.customerToken);
     }
 
     payButton.textContent="OPENING SECURE PAYMENT...";
