@@ -543,6 +543,19 @@ body{background:var(--rf-cream)}
 }
 
 .gallery-500{display:flex;flex-direction:column;gap:8px;padding:0;background:#291f16;cursor:pointer}.gallery-main{aspect-ratio:1/1.16;overflow:hidden}.gallery-main img{width:100%;height:100%;object-fit:cover}.gallery-thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 6px 6px}.g500thumb{border:1px solid rgba(226,196,124,.2);padding:0;background:#20170f;cursor:pointer;aspect-ratio:1}.g500thumb.active{border-color:var(--gold2)}.g500thumb img{width:100%;height:100%;object-fit:cover}.g500thumb:hover{border-color:var(--gold)}
+
+/* Full-bleed green Bilona section: remove cream side gutters on tablet and desktop */
+.process{
+  width:100vw!important;
+  max-width:100vw!important;
+  margin-left:calc(50% - 50vw)!important;
+  margin-right:calc(50% - 50vw)!important;
+}
+.process>.container{
+  width:min(1220px,90vw)!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
 </style>
 </head>
 <body>
