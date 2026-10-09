@@ -1278,6 +1278,7 @@ handleCashfreeReturn();
 
 
 
+
 <script>
 (function(){
  function alignBilonaReference(){
@@ -1285,16 +1286,12 @@ handleCashfreeReturn();
   var steps=document.querySelector('#process .processcopy .steps');
   var photo=document.querySelector('#process .processphoto');
   if(!grid||!steps||!photo)return;
-  if(window.innerWidth<=1200){
-   var gr=grid.getBoundingClientRect(), sr=steps.getBoundingClientRect();
-   photo.style.top=(sr.top-gr.top+grid.scrollTop)+'px';
-   photo.style.height=sr.height+'px';
-   photo.style.width='calc(50% - '+(parseFloat(getComputedStyle(grid).columnGap)||0)+'px / 2)';
-  }else{
-   photo.style.top='0px';photo.style.height=srHeight(steps)+'px';
-  }
+  var gr=grid.getBoundingClientRect(), sr=steps.getBoundingClientRect();
+  photo.style.position='absolute';
+  photo.style.top=(sr.top-gr.top+grid.scrollTop)+'px';
+  photo.style.right='0';
+  photo.style.height=sr.height+'px';
  }
- function srHeight(el){return el.getBoundingClientRect().height}
  window.addEventListener('load',alignBilonaReference);
  window.addEventListener('resize',alignBilonaReference);
  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(alignBilonaReference);
