@@ -593,6 +593,33 @@ body{background:var(--rf-cream)}
  .processcopy .step p{font-size:8px!important;line-height:1.35!important}
 }
 </style>
+<style>
+
+/* Bilona 5-step and 5-panel collage: exact matching heights */
+@media(max-width:1200px){
+ .processgrid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:stretch!important;gap:clamp(10px,2vw,24px)!important}
+ .processgrid>.processcopy{display:flex!important;flex-direction:column!important;min-width:0!important;text-align:left!important}
+ .processcopy .steps{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;overflow:visible!important;gap:0!important;margin:18px 0 0!important;padding:0!important}
+ .processcopy .step{flex:1 1 0!important;min-width:0!important;max-width:none!important;display:grid!important;grid-template-columns:clamp(20px,2.4vw,30px) minmax(0,1fr)!important;gap:clamp(4px,.8vw,10px)!important;padding:clamp(8px,1.1vw,14px) 0!important;text-align:left!important}
+ .processcopy .stepno{width:clamp(20px,2.4vw,30px)!important;height:clamp(20px,2.4vw,30px)!important;margin:0!important;display:grid!important;place-items:center!important;font-size:clamp(9px,1.2vw,14px)!important}
+ .processcopy .step h4{font-size:clamp(12px,1.7vw,20px)!important;line-height:1.08!important}
+ .processcopy .step p{font-size:clamp(8px,1.2vw,13px)!important;line-height:1.4!important}
+ .processgrid>.processphoto{display:block!important;align-self:stretch!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important;margin:0!important;overflow:hidden!important;position:relative!important}
+ .processgrid>.processphoto img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
+}
+@media(max-width:600px){
+ .process{padding:42px 0!important}
+ .processgrid{gap:9px!important}
+ .processcopy .overline{font-size:7px!important;letter-spacing:.08em!important}
+ .processcopy .bigtitle{font-size:clamp(23px,6vw,32px)!important;line-height:.95!important}
+ .processcopy>.body{font-size:9px!important;line-height:1.35!important}
+ .processcopy .steps{margin-top:12px!important}
+ .processcopy .step{grid-template-columns:18px minmax(0,1fr)!important;gap:4px!important;padding:7px 0!important}
+ .processcopy .stepno{width:17px!important;height:17px!important;font-size:8px!important}
+ .processcopy .step h4{font-size:clamp(10px,2.8vw,13px)!important}
+ .processcopy .step p{font-size:8px!important;line-height:1.35!important}
+}
+</style>
 </head>
 <body>
 <div class="top">RUDRAKSHA FARM · BARmer, RAJASTHAN · THE SOUL OF TRADITION</div>
@@ -1010,6 +1037,9 @@ handleCashfreeReturn();
  </script>
 <script>
 (function(){function alignBilona(){var g=document.querySelector('.processgrid'),s=g&&g.querySelector('.processcopy .steps'),p=g&&g.querySelector('.processphoto');if(!g||!s||!p)return;if(window.innerWidth<=1200){p.style.marginTop=s.offsetTop+'px';p.style.height=s.offsetHeight+'px';p.style.alignSelf='start'}else{p.style.marginTop='0';p.style.height=s.offsetHeight+'px'}}window.addEventListener('load',alignBilona);window.addEventListener('resize',alignBilona);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(alignBilona);setTimeout(alignBilona,300)})();
+</script>
+<script>
+(function(){function fitBilona(){var g=document.querySelector('.processgrid'),s=g&&g.querySelector('.processcopy .steps'),p=g&&g.querySelector('.processphoto');if(!g||!s||!p)return;if(window.innerWidth<=1200){p.style.height=s.getBoundingClientRect().height+'px';p.style.marginTop=s.offsetTop+'px';p.style.alignSelf='start'}else{p.style.marginTop='0';p.style.height=s.getBoundingClientRect().height+'px'}}window.addEventListener('load',fitBilona);window.addEventListener('resize',fitBilona);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitBilona);setTimeout(fitBilona,500)})();
 </script>
 
    
