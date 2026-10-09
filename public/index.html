@@ -651,22 +651,37 @@ body{background:var(--rf-cream)}
 </style>
 <style>
 
-/* Bilona alignment: image starts at step 01 and ends at step 05 */
+
+/* Bilona reference layout — five method rows align with five image panels */
+.processgrid{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:clamp(24px,4vw,68px)!important;align-items:start!important}
+.processcopy{min-width:0!important}
+.processcopy .overline{font-size:10px!important;letter-spacing:.2em!important;margin-bottom:14px!important}
+.processcopy .bigtitle{font-size:clamp(38px,4.4vw,64px)!important;line-height:.98!important;letter-spacing:-.02em!important;margin:0 0 14px!important}
+.processcopy>.body{margin:0 0 24px!important}
+.processcopy .steps{display:flex!important;flex-direction:column!important;gap:0!important}
+.processcopy .step{display:grid!important;grid-template-columns:52px minmax(0,1fr)!important;gap:16px!important;padding:18px 0!important;border-bottom:1px solid rgba(255,250,241,.18)!important}
+.processcopy .stepno{color:var(--gold)!important;font-size:22px!important}
+.processgrid>.processphoto{position:absolute!important;top:0;right:0;width:calc(50% - clamp(12px,2vw,34px))!important;height:auto;aspect-ratio:auto!important;margin:0!important;overflow:hidden!important}
+.processgrid>.processphoto img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
 @media(max-width:1200px){
- .processgrid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:clamp(10px,2vw,24px)!important;position:relative!important;align-items:start!important}
- .processgrid>.processcopy{grid-column:1!important;min-width:0!important}
- .processgrid>.processphoto{position:absolute!important;top:0;right:0;width:calc(50% - clamp(10px,2vw,24px)/2)!important;height:auto;aspect-ratio:auto!important;margin:0!important;overflow:hidden!important}
- .processgrid>.processphoto img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
+ .processgrid{gap:clamp(12px,2vw,24px)!important}
+ .processcopy .bigtitle{font-size:clamp(30px,4vw,48px)!important}
+ .processcopy>.body{font-size:clamp(10px,1.5vw,15px)!important;margin-bottom:18px!important}
+ .processcopy .step{grid-template-columns:clamp(24px,3vw,40px) minmax(0,1fr)!important;gap:clamp(5px,1vw,12px)!important;padding:clamp(10px,1.4vw,18px) 0!important}
+ .processcopy .stepno{font-size:clamp(12px,1.8vw,22px)!important}
+ .processcopy .step h4{font-size:clamp(13px,2vw,23px)!important;line-height:1.1!important}
+ .processcopy .step p{font-size:clamp(9px,1.35vw,15px)!important;line-height:1.45!important}
 }
 @media(max-width:600px){
- .process{padding:42px 0!important}
+ .process{padding:44px 0!important}
+ .processgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px!important}
  .processcopy .overline{font-size:7px!important;letter-spacing:.12em!important;margin-bottom:10px!important}
- .processcopy .bigtitle{font-size:clamp(24px,6vw,32px)!important;line-height:1.02!important;letter-spacing:-.02em!important;margin-bottom:9px!important}
- .processcopy>.body{font-size:9px!important;line-height:1.35!important;margin-bottom:12px!important}
- .processcopy .step{grid-template-columns:18px minmax(0,1fr)!important;gap:4px!important;padding:7px 0!important}
- .processcopy .stepno{width:17px!important;height:17px!important;font-size:8px!important}
- .processcopy .step h4{font-size:clamp(10px,2.8vw,13px)!important}
- .processcopy .step p{font-size:8px!important;line-height:1.35!important}
+ .processcopy .bigtitle{font-size:clamp(24px,6vw,32px)!important;line-height:1.02!important;margin:0 0 10px!important}
+ .processcopy>.body{font-size:9px!important;line-height:1.4!important;margin-bottom:14px!important}
+ .processcopy .step{grid-template-columns:18px minmax(0,1fr)!important;gap:4px!important;padding:8px 0!important}
+ .processcopy .stepno{font-size:8px!important}
+ .processcopy .step h4{font-size:clamp(10px,2.8vw,13px)!important;line-height:1.08!important}
+ .processcopy .step p{font-size:8px!important;line-height:1.4!important}
 }
 </style>
 </head>
@@ -1261,48 +1276,29 @@ handleCashfreeReturn();
   .processcopy .step p{font-size:8px!important;line-height:1.35!important}
 }
 
+
+
 <script>
 (function(){
- function fitBilona(){
-  var grid=document.querySelector('.processgrid'),copy=grid&&grid.querySelector('.processcopy'),
-      steps=copy&&copy.querySelector('.steps'),photo=grid&&grid.querySelector('.processphoto');
-  if(!grid||!copy||!steps||!photo)return;
-  photo.style.marginTop='0px';
-  photo.style.height='auto';
-  var copyRect=copy.getBoundingClientRect(),stepsRect=steps.getBoundingClientRect();
-  photo.style.marginTop=Math.max(0,stepsRect.top-copyRect.top)+'px';
-  photo.style.height=stepsRect.height+'px';
-  photo.style.alignSelf='start';
- }
- window.addEventListener('load',fitBilona);
- window.addEventListener('resize',fitBilona);
- if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitBilona);
- if(window.ResizeObserver){var ro=new ResizeObserver(fitBilona);window.addEventListener('load',function(){var s=document.querySelector('.processcopy .steps');if(s)ro.observe(s)})}
- setTimeout(fitBilona,300);setTimeout(fitBilona,1000);
-})();
-</script>
-<script>
-(function(){
- function alignBilonaImage(){
+ function alignBilonaReference(){
   var grid=document.querySelector('#process .processgrid');
   var steps=document.querySelector('#process .processcopy .steps');
   var photo=document.querySelector('#process .processphoto');
   if(!grid||!steps||!photo)return;
   if(window.innerWidth<=1200){
-   var gridBox=grid.getBoundingClientRect();
-   var stepsBox=steps.getBoundingClientRect();
-   photo.style.top=(stepsBox.top-gridBox.top+grid.scrollTop)+'px';
-   photo.style.height=stepsBox.height+'px';
-   photo.style.width='calc(50% - '+getComputedStyle(grid).columnGap+')';
+   var gr=grid.getBoundingClientRect(), sr=steps.getBoundingClientRect();
+   photo.style.top=(sr.top-gr.top+grid.scrollTop)+'px';
+   photo.style.height=sr.height+'px';
+   photo.style.width='calc(50% - '+(parseFloat(getComputedStyle(grid).columnGap)||0)+'px / 2)';
   }else{
-   photo.style.position='relative';photo.style.top='';photo.style.right='';
-   photo.style.width='';photo.style.height='';
+   photo.style.top='0px';photo.style.height=srHeight(steps)+'px';
   }
  }
- window.addEventListener('load',alignBilonaImage);
- window.addEventListener('resize',alignBilonaImage);
- if(document.fonts&&document.fonts.ready)document.fonts.ready.then(alignBilonaImage);
- if(window.ResizeObserver){window.addEventListener('load',function(){var s=document.querySelector('#process .steps');if(s)new ResizeObserver(alignBilonaImage).observe(s)})}
- setTimeout(alignBilonaImage,250);setTimeout(alignBilonaImage,900);
+ function srHeight(el){return el.getBoundingClientRect().height}
+ window.addEventListener('load',alignBilonaReference);
+ window.addEventListener('resize',alignBilonaReference);
+ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(alignBilonaReference);
+ if(window.ResizeObserver){window.addEventListener('load',function(){var el=document.querySelector('#process .processcopy .steps');if(el)new ResizeObserver(alignBilonaReference).observe(el)})}
+ setTimeout(alignBilonaReference,250);setTimeout(alignBilonaReference,800);
 })();
 </script>
