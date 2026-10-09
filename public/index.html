@@ -1006,3 +1006,43 @@ handleCashfreeReturn();
   .reference-hero>img{width:100%!important;height:100%!important;max-width:none!important;display:block!important;object-fit:cover!important;object-position:center center!important;}
   .reference-hero:before{content:"";position:absolute;z-index:3;top:0;left:55%;width:40%;height:44px;background:#f4eee3;pointer-events:none;}
 }
+
+
+/* Bilona mobile layout — horizontal steps with collage directly below */
+@media(max-width:600px){
+  .processgrid{
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;
+    gap:18px!important;
+  }
+  .processgrid>.processcopy{width:100%!important;min-width:0!important}
+  .processgrid>.processphoto{
+    display:block!important;order:2!important;width:100%!important;
+    height:auto!important;max-height:none!important;aspect-ratio:2/3!important;
+    margin:0!important;overflow:hidden!important;align-self:stretch!important;
+  }
+  .processgrid>.processphoto img{
+    display:block!important;width:100%!important;height:100%!important;
+    object-fit:cover!important;object-position:center!important;
+  }
+  .processcopy .steps{
+    display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+    width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;
+    gap:8px!important;padding:0 0 12px!important;margin:24px 0 0!important;
+    scroll-snap-type:x mandatory!important;scrollbar-width:none!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  .processcopy .steps::-webkit-scrollbar{display:none!important}
+  .processcopy .step{
+    flex:0 0 30%!important;min-width:104px!important;max-width:140px!important;
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;
+    gap:6px!important;padding:0 4px 8px!important;margin:0!important;
+    border:0!important;text-align:center!important;scroll-snap-align:start!important;
+  }
+  .processcopy .stepno{
+    width:42px!important;height:42px!important;flex:none!important;margin:0 auto!important;
+    border:1px solid #e2c47c!important;border-radius:50%!important;
+    display:grid!important;place-items:center!important;font-size:18px!important;
+  }
+  .processcopy .step h4{font-size:15px!important;line-height:1.05!important;margin:2px 0!important}
+  .processcopy .step p{font-size:9px!important;line-height:1.45!important;color:#d2d6ca!important}
+}
