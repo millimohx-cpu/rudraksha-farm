@@ -135,6 +135,7 @@ async function initDb(){
   }
   await pool.query("UPDATE products SET price=1149 WHERE id='ghee-500'");
   await pool.query("UPDATE products SET price=2199 WHERE id='ghee-1000'");
+  await pool.query("UPDATE products SET pack='5 L (4590 g)',price=10000 WHERE id='ghee-2500'");
 }
 async function recordOrderNotification(orderId,event){
   await pool.query('INSERT INTO order_notifications(order_id,event) SELECT $1,$2 WHERE NOT EXISTS (SELECT 1 FROM order_notifications WHERE order_id=$1 AND event=$2)',[orderId,event]);
