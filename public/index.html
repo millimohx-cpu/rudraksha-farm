@@ -1008,7 +1008,65 @@ handleCashfreeReturn();
 }
 
 
-/* Bilona mobile layout — horizontal steps with collage directly below */
+
+/* Bilona mobile/tablet: process steps and collage side-by-side, equal full height */
+@media(max-width:900px){
+  .process{padding:56px 0!important}
+  .processgrid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    align-items:stretch!important;
+    gap:14px!important;
+  }
+  .processgrid>.processcopy{
+    width:auto!important;min-width:0!important;text-align:left!important;
+    display:flex!important;flex-direction:column!important;
+  }
+  .processcopy .overline{font-size:8px!important;letter-spacing:.12em!important}
+  .processcopy .bigtitle{font-size:clamp(26px,5vw,43px)!important;line-height:.95!important}
+  .processcopy>.body{font-size:11px!important;line-height:1.45!important;margin-top:10px!important}
+  .processcopy .steps{
+    display:flex!important;flex-direction:column!important;flex:1 1 auto!important;
+    overflow:visible!important;gap:0!important;width:100%!important;
+    margin:14px 0 0!important;padding:0!important;scroll-snap-type:none!important;
+  }
+  .processcopy .step{
+    flex:1 1 0!important;min-width:0!important;max-width:none!important;
+    display:grid!important;grid-template-columns:25px minmax(0,1fr)!important;
+    flex-direction:initial!important;align-items:start!important;gap:6px!important;
+    padding:9px 0!important;margin:0!important;text-align:left!important;
+    border-bottom:1px solid rgba(255,250,241,.16)!important;
+  }
+  .processcopy .stepno{
+    width:23px!important;height:23px!important;margin:0!important;
+    border:1px solid #e2c47c!important;border-radius:50%!important;
+    display:grid!important;place-items:center!important;font-size:11px!important;
+  }
+  .processcopy .step h4{font-size:clamp(12px,2.2vw,17px)!important;line-height:1.05!important;margin:2px 0 4px!important}
+  .processcopy .step p{font-size:clamp(8px,1.6vw,11px)!important;line-height:1.4!important;color:#d2d6ca!important}
+  .processgrid>.processphoto{
+    display:block!important;order:initial!important;align-self:stretch!important;
+    width:100%!important;height:auto!important;min-height:100%!important;
+    max-height:none!important;aspect-ratio:auto!important;margin:0!important;
+    overflow:hidden!important;position:relative!important;
+  }
+  .processgrid>.processphoto img{
+    display:block!important;width:100%!important;height:100%!important;
+    min-height:100%!important;object-fit:cover!important;object-position:center!important;
+  }
+}
+@media(max-width:420px){
+  .process{padding:44px 0!important}
+  .processgrid{gap:9px!important}
+  .processcopy .bigtitle{font-size:27px!important}
+  .processcopy>.body{font-size:9px!important}
+  .processcopy .step{grid-template-columns:20px minmax(0,1fr)!important;gap:4px!important;padding:8px 0!important}
+  .processcopy .stepno{width:19px!important;height:19px!important;font-size:9px!important}
+  .processcopy .step h4{font-size:11px!important}
+  .processcopy .step p{font-size:8px!important}
+}
+
+
 @media(max-width:600px){
   .processgrid{
     display:flex!important;flex-direction:column!important;align-items:stretch!important;
