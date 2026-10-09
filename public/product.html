@@ -28,12 +28,11 @@
   <div class="breadcrumbs"><a href="index.html">Home</a> &nbsp;›&nbsp; Shop &nbsp;›&nbsp; 500 ML A2 Bilona Desi Cow Ghee</div>
   <div class="product-grid">
     <section>
-      <div class="gallery-main"><img id="mainImage" src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8ff3a6ee-56a3-4ba0-b064-358954061d3a.jpg" alt="Rudraksha Farm 500 ml ghee"></div>
+      <div class="gallery-main"><img id="mainImage" src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/1fe6b7b6-1b8e-4a4b-aacb-b0936579753e.png" alt="Rudraksha Farm 500 ml ghee"></div>
       <div class="thumbs">
-        <button class="thumb active" onclick="setImage(0)"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8ff3a6ee-56a3-4ba0-b064-358954061d3a.jpg" alt="500 ml product image 1"></button>
-        <button class="thumb" onclick="setImage(1)"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8a966b5f-c068-4a38-97ce-3f60a3389b62.jpg" alt="500 ml product image 2"></button>
-        <button class="thumb" onclick="setImage(2)"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/b4b605dd-05fa-4303-aa29-e8d5604a7a82.jpg" alt="500 ml product image 3"></button>
-        <button class="thumb" onclick="setImage(3)"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/2320b0c9-72cf-4051-b745-5a1ae7fb9abd.jpg" alt="500 ml product label"></button>
+        <button class="thumb active" onclick="setImage(0)"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/1fe6b7b6-1b8e-4a4b-aacb-b0936579753e.png" alt="500 ml ghee hero image"></button>
+        <button class="thumb" onclick="setImage(1)"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/fba93669-04dd-4088-b665-a94e9da7a9b2.png" alt="500 ml ghee top view"></button>
+        <button class="thumb" onclick="setImage(2)"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/609e9974-f59e-469b-a1c9-269e0bbfc8f3.png" alt="500 ml ghee product pack"></button>
       </div>
     </section>
 
@@ -66,7 +65,7 @@
 </main>
 <div class="toast" id="toast">Added to cart</div>
 <script>
-const images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8ff3a6ee-56a3-4ba0-b064-358954061d3a.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/8a966b5f-c068-4a38-97ce-3f60a3389b62.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/b4b605dd-05fa-4303-aa29-e8d5604a7a82.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/2320b0c9-72cf-4051-b745-5a1ae7fb9abd.jpg"];
+const images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/1fe6b7b6-1b8e-4a4b-aacb-b0936579753e.png","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/fba93669-04dd-4088-b665-a94e9da7a9b2.png","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/609e9974-f59e-469b-a1c9-269e0bbfc8f3.png"];
 function setImage(i){document.getElementById("mainImage").src=images[i];document.querySelectorAll(".thumb").forEach((b,n)=>b.classList.toggle("active",n===i))}
 let qty=1;function changeQty(d){qty=Math.max(1,Math.min(99,qty+d));document.getElementById("qty").textContent=qty}
 function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-500");if(x)x.qty+=qty;else cart.push({productId:"ghee-500",name:"500 ML A2 Bilona Ghee",price:1149,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
