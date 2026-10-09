@@ -687,6 +687,10 @@ body{background:var(--rf-cream)}
 <style>
 
 </style>
+<style>
+/* Hide floating cart shortcut above WhatsApp; cart remains available through shop/cart flows */
+.cart-trigger{display:none!important}
+</style>
 </head>
 <body>
 <div class="top">RUDRAKSHA FARM · BARmer, RAJASTHAN · THE SOUL OF TRADITION</div>
@@ -833,7 +837,6 @@ body{background:var(--rf-cream)}
   </div>
 </footer>
 
-<button class="cart-trigger" id="cartTrigger" type="button" onclick="openCart()">CART · <span id="cartCount">0</span></button>
 <a class="wa" href="https://wa.me/917296820070" target="_blank">WhatsApp · 7296820070</a>
 <div class="cart" id="cart" onclick="if(event.target===this)closeCart()">
   <aside class="drawer">
