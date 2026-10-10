@@ -65,7 +65,7 @@
 const images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/81cc2079-cb83-42f5-b706-0e656c6368ef.png","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/48e80cf4-1add-4001-a9c5-b9158a8f099b.png","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/50a80358-cf0c-4dc6-9185-a8d27c0ecf25.png","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/2fbe748b-d231-44e2-b1aa-be6b2ca259d4.jpg"];
 function setImage(i){document.getElementById("mainImage").src=images[i];document.querySelectorAll(".thumb").forEach((b,n)=>b.classList.toggle("active",n===i))}
 let qty=1;function changeQty(d){qty=Math.max(1,Math.min(99,qty+d));document.getElementById("qty").textContent=qty}
-function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-1000");if(x)x.qty+=qty;else cart.push({productId:"ghee-1000",name:"1 KG A2 Bilona Ghee",price:2199,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
+function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-1000");if(x)x.qty+=qty;else cart.push({productId:"ghee-1000",name:"1 KG A2 Bilona Ghee",price:2199,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));location.href="index.html?cart=1#shop"}
 function buyNow(){location.href="index.html?buy=ghee-1000&qty="+qty+"#shop"}
 </script>
 </body>
