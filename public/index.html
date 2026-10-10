@@ -1023,48 +1023,41 @@ async function submitOrder(e){
   message.textContent="Please wait...";
 
   try{
-    const res=await fetch("/api/payments/cashfree/order",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        ...(localStorage.getItem("rf_customer_token")?{Authorization:"Bearer "+localStorage.getItem("rf_customer_token")}:{})
-      },
-      body:JSON.stringify({
-        accountPassword:accountPassword,
-        customer:{
-          name:name,
-          phone:phone,
-          email:email,
-          address:address
+    const controller=new AbortController();
+    const requestTimer=setTimeout(()=>controller.abort(),20000);
+    let res,out;
+    try{
+      res=await fetch("/api/payments/cashfree/order",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          ...(localStorage.getItem("rf_customer_token")?{Authorization:"Bearer "+localStorage.getItem("rf_customer_token")}:{})
         },
-        items:cart.map(x=>({
-          productId:x.productId,
-          quantity:x.qty
-        })),
-        couponCode:appliedCoupon||null
-      })
-    });
-
-    const out=await res.json();
-
-    if(!res.ok){
-      throw new Error(out.error||"Unable to create payment");
+        body:JSON.stringify({
+          accountPassword:accountPassword,
+          customer:{name:name,phone:phone,email:email,address:address},
+          items:cart.map(x=>({productId:x.productId,quantity:x.qty})),
+          couponCode:appliedCoupon||null
+        }),
+        signal:controller.signal
+      });
+      out=await res.json();
+    }catch(requestError){
+      if(requestError.name==="AbortError")throw new Error("Payment server timed out. Please try again in a moment.");
+      throw new Error("Could not reach the payment server. Check your internet and try again.");
+    }finally{
+      clearTimeout(requestTimer);
     }
-    if(out.customerToken){
-      localStorage.setItem("rf_customer_token",out.customerToken);
-    }
+
+    if(!res.ok)throw new Error(out.error||"Unable to create payment");
+    if(!out.paymentSessionId)throw new Error("Cashfree did not return a payment session. Please contact support.");
+    if(out.customerToken)localStorage.setItem("rf_customer_token",out.customerToken);
 
     payButton.textContent="OPENING SECURE PAYMENT...";
     await loadCashfree();
-
-    const cashfree=Cashfree({
-      mode:out.environment
-    });
-
-    cashfree.checkout({
-      paymentSessionId:out.paymentSessionId,
-      redirectTarget:"_self"
-    });
+    const cashfree=Cashfree({mode:out.environment==="production"?"production":"sandbox"});
+    const checkoutResult=await cashfree.checkout({paymentSessionId:out.paymentSessionId,redirectTarget:"_self"});
+    if(checkoutResult&&checkoutResult.error)throw new Error(checkoutResult.error.message||"Cashfree could not open checkout.");
 
   }catch(err){
     console.error(err);
