@@ -129,7 +129,7 @@ async function initDb(){
       [
         'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',1149,null,true,
         'ghee-1000','A2 Bilona Desi Cow Ghee','1 kg',2199,null,true,
-        'ghee-2500','A2 Bilona Desi Cow Ghee','5 L (4590 g)',10000,'https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/99ef9150-6b8b-4cdd-b2de-000a76270f6f.jpg',true
+        'ghee-2500','A2 Bilona Desi Cow Ghee','5 L (4590 g)',10000,null,true
       ]
     );
   }
