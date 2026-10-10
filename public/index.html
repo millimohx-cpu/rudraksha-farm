@@ -701,6 +701,69 @@ body{background:var(--rf-cream)}
 .navin{height:44px!important;min-height:44px!important}
 @media(max-width:600px){.top{height:30px!important;min-height:30px!important;font-size:7.5px!important;letter-spacing:.12em!important}.nav{top:30px!important}.navin{height:40px!important;min-height:40px!important}.brand.brand-wordmark span{font-size:clamp(13px,4vw,17px)!important;letter-spacing:.075em!important}.brand.brand-wordmark{padding:0 3px!important;max-width:70vw!important}.menu-btn,.header-cart-btn{align-self:center!important}}
 </style>
+<style>
+/* FINAL MOBILE HEADER ALIGNMENT — menu, wordmark and cart on one exact center line */
+@media (max-width:600px){
+  .navin{
+    position:relative!important;
+    width:100%!important;
+    height:68px!important;
+    min-height:68px!important;
+    padding:0 8px!important;
+    display:grid!important;
+    grid-template-columns:44px minmax(0,1fr) 44px!important;
+    align-items:center!important;
+  }
+  .brand.brand-wordmark{
+    grid-column:2!important;
+    grid-row:1!important;
+    position:static!important;
+    left:auto!important;
+    top:auto!important;
+    transform:none!important;
+    width:auto!important;
+    height:54px!important;
+    margin:0 auto!important;
+    padding:0 3px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    z-index:2001!important;
+  }
+  .brand.brand-wordmark span{
+    display:block!important;
+    line-height:1!important;
+    margin:0!important;
+    transform:translateY(0)!important;
+  }
+  .menu-btn{
+    grid-column:1!important;
+    grid-row:1!important;
+    position:static!important;
+    justify-self:start!important;
+    align-self:center!important;
+    width:44px!important;
+    height:44px!important;
+    margin:0!important;
+    transform:none!important;
+    z-index:2101!important;
+  }
+  .header-cart-btn{
+    grid-column:3!important;
+    grid-row:1!important;
+    position:static!important;
+    justify-self:end!important;
+    align-self:center!important;
+    width:44px!important;
+    height:44px!important;
+    margin:0!important;
+    transform:none!important;
+    z-index:2101!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+}
+</style>
 </head>
 <body>
 <div class="top">RUDRAKSHA FARM · BARmer, RAJASTHAN · THE SOUL OF TRADITION</div>
