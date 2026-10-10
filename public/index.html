@@ -948,7 +948,8 @@ function openCart(){render();document.getElementById("cart").classList.add("show
 function render(){
   let box=document.getElementById("items");
   const count=cart.reduce((s,x)=>s+x.qty,0);
-  document.getElementById("cartCount").textContent=count;
+  const cartCountEl=document.getElementById("cartCount");
+  if(cartCountEl)cartCountEl.textContent=count;
   if(!cart.length){
     box.innerHTML='<p style="color:#887a69;font-size:13px">Your cart is empty.</p>';
     document.getElementById("subtotal").textContent="₹0";
