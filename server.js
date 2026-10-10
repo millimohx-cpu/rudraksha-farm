@@ -73,6 +73,14 @@ async function initDb(){
     );
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT;
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    CREATE TABLE IF NOT EXISTS customer_password_resets(
+      token_hash TEXT PRIMARY KEY,
+      phone TEXT NOT NULL REFERENCES customers(phone) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_customer_password_resets_expiry ON customer_password_resets(expires_at);
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(10,2) NOT NULL DEFAULT 0;
     CREATE TABLE IF NOT EXISTS admin_audit_logs(
@@ -324,6 +332,43 @@ async function api(req,res){
       await pool.query('UPDATE customers SET last_login_at=NOW() WHERE phone=$1',[phone]);
       const t=token();await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[t,phone]);
       return json(res,200,{token:t,phone:'+91'+phone});
+    }
+    if(req.method==='POST'&&p==='/api/customer/forgot-password'){
+      const b=await body(req),email=String(b.email||'').trim().toLowerCase();
+      if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return json(res,400,{error:'Enter the email address linked to your account.'});
+      const apiKey=process.env.RESEND_API_KEY||'',from=process.env.RESET_FROM_EMAIL||'';
+      if(!apiKey||!from)return json(res,503,{error:'Password reset email is not configured yet. Please contact support on WhatsApp.'});
+      const r=await pool.query('SELECT phone,email FROM customers WHERE LOWER(email)=LOWER($1) LIMIT 1',[email]);
+      if(r.rowCount){
+        const resetToken=token(),tokenHash=sessionHash(resetToken);
+        await pool.query('DELETE FROM customer_password_resets WHERE phone=$1 OR expires_at<=NOW() OR used_at IS NOT NULL',[r.rows[0].phone]);
+        await pool.query('INSERT INTO customer_password_resets(token_hash,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 minutes\')',[tokenHash,r.rows[0].phone]);
+        const base=(process.env.PUBLIC_BASE_URL||'https://rudrakshafarm.in').replace(/\\/$/,'');
+        const resetUrl=base+'/reset-password.html?token='+encodeURIComponent(resetToken);
+        const emailResponse=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},body:JSON.stringify({from,to:[email],subject:'Reset your Rudraksha Farm password',html:'<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#17120e"><h2>Rudraksha Farm</h2><p>We received a request to reset your customer account password.</p><p><a href="'+resetUrl+'" style="display:inline-block;background:#173a2b;color:white;padding:12px 18px;text-decoration:none;border-radius:8px">Reset Password</a></p><p>This secure link expires in 30 minutes and can be used once. If you did not request this, you can ignore this email.</p><p>The Soul of Tradition</p></div>'})});
+        if(!emailResponse.ok){const detail=await emailResponse.text();console.error('Password reset email provider error:',emailResponse.status,detail.slice(0,300));await pool.query('DELETE FROM customer_password_resets WHERE token_hash=$1',[tokenHash]);return json(res,502,{error:'We could not send the reset email right now. Please try again later or contact support.'});}
+      }
+      return json(res,200,{ok:true,message:'If an account uses this email address, a password reset link has been sent. Please check your inbox and spam folder.'});
+    }
+    if(req.method==='POST'&&p==='/api/customer/reset-password'){
+      const b=await body(req),resetToken=String(b.token||''),password=String(b.password||'');
+      if(resetToken.length<40||resetToken.length>200)return json(res,400,{error:'This reset link is invalid or expired. Request a new one.'});
+      if(password.length<8)return json(res,400,{error:'New password must be at least 8 characters.'});
+      const tokenHash=sessionHash(resetToken),r=await pool.query('SELECT phone FROM customer_password_resets WHERE token_hash=$1 AND expires_at>NOW() AND used_at IS NULL',[tokenHash]);
+      if(!r.rowCount)return json(res,400,{error:'This reset link is invalid or expired. Request a new one.'});
+      const phone=r.rows[0].phone,newHash=await new Promise((resolve,reject)=>crypto.scrypt(password,SESSION_SECRET,64,(e,k)=>e?reject(e):resolve(k.toString('hex'))));
+      const client=await pool.connect();
+      try{
+        await client.query('BEGIN');
+        const valid=await client.query('SELECT phone FROM customer_password_resets WHERE token_hash=$1 AND expires_at>NOW() AND used_at IS NULL FOR UPDATE',[tokenHash]);
+        if(!valid.rowCount)throw Error('RESET_LINK_USED');
+        await client.query('UPDATE customers SET password_hash=$1 WHERE phone=$2',[newHash,phone]);
+        await client.query('UPDATE customer_password_resets SET used_at=NOW() WHERE token_hash=$1',[tokenHash]);
+        await client.query('DELETE FROM customer_sessions WHERE phone=$1',[phone]);
+        await client.query('COMMIT');
+      }catch(e){await client.query('ROLLBACK');if(e.message==='RESET_LINK_USED')return json(res,400,{error:'This reset link has already been used. Request a new one.'});throw e}
+      finally{client.release()}
+      return json(res,200,{ok:true,message:'Password reset successfully. Please login with your new password.'});
     }
     if(req.method==='POST'&&p==='/api/customer/register-or-login'){
       return json(res,410,{error:'OTP login has been removed. Use password login.'});
