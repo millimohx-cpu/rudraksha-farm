@@ -68,7 +68,7 @@
 const images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/1fe6b7b6-1b8e-4a4b-aacb-b0936579753e.png","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/fba93669-04dd-4088-b665-a94e9da7a9b2.png","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/609e9974-f59e-469b-a1c9-269e0bbfc8f3.png"];
 function setImage(i){document.getElementById("mainImage").src=images[i];document.querySelectorAll(".thumb").forEach((b,n)=>b.classList.toggle("active",n===i))}
 let qty=1;function changeQty(d){qty=Math.max(1,Math.min(99,qty+d));document.getElementById("qty").textContent=qty}
-function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-500");if(x)x.qty+=qty;else cart.push({productId:"ghee-500",name:"500 ML A2 Bilona Ghee",price:1149,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));const t=document.getElementById("toast");t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
+function addToCart(){const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-500");if(x)x.qty+=qty;else cart.push({productId:"ghee-500",name:"500 ML A2 Bilona Ghee",price:1149,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));location.href="index.html?cart=1#shop"}
 function buyNow(){location.href="index.html?buy=ghee-500&qty="+qty+"#shop"}
 </script>
 </body>
