@@ -31,6 +31,15 @@ $("passwordBtn").onclick=()=>{$("passwordCard").classList.toggle("hidden");$("pr
 $("saveProfile").onclick=async()=>{try{await api("/api/customer/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("pname").value,email:$("pemail").value})});await loadCustomer();alert("Profile updated.");}catch(e){alert(e.message)}};
 $("savePassword").onclick=async()=>{try{await api("/api/customer/change-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({currentPassword:$("currentPassword").value,newPassword:$("newPassword").value})});$("currentPassword").value="";$("newPassword").value="";alert("Password changed successfully.");}catch(e){alert(e.message)}};
 let customerOrders=[];
+async function loadOrders(){
+ try{
+  const d=await api("/api/customer/orders");
+  customerOrders=Array.isArray(d.orders)?d.orders:[];
+  renderOrders();
+ }catch(e){
+  $("orders").textContent=e.message||"Unable to load orders. Please refresh and try again.";
+ }
+}
 function renderOrders(){
  const filter=$("orderFilter").value,search=$("orderSearch").value.trim().toLowerCase();
  const orders=customerOrders.filter(o=>(filter==="all"||o.paymentStatus===filter||o.status===filter)&&( !search || o.id.toLowerCase().includes(search)));
