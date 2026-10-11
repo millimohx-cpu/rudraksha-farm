@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Rudraksha Farm — Private ₹10 Payment Test</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f7f4ee;color:#24231f;font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(100%,440px);background:#fff;border:1px solid #e5dfd4;border-radius:18px;padding:24px;box-shadow:0 12px 38px #34220d0d}h1{font-size:24px;margin:0 0 8px}.sub{color:#625d54;margin:0 0 18px}.amount{font-size:32px;font-weight:750;margin:16px 0}.warning{background:#fff4d8;border-radius:10px;padding:12px;font-size:13px;margin:16px 0}label{display:block;font-weight:650;margin:14px 0 6px}input{width:100%;padding:12px;border:1px solid #cfc7b8;border-radius:9px;font:inherit}button{width:100%;border:0;border-radius:10px;background:#5c291e;color:#fff;padding:14px;font:inherit;font-weight:700;margin-top:18px}button:disabled{opacity:.6}#msg{white-space:pre-wrap;color:#9a281c;margin-top:12px;font-size:14px}.back{display:block;text-align:center;margin-top:16px;color:#5c291e}
+</style>
+</head>
+<body><main class="card">
+<h1>Private payment verification</h1>
+<p class="sub">Rudraksha Farm · Internal test only</p>
+<div class="amount">₹10.00</div>
+<p>This checkout is for a small real-payment verification. It does not contain a product and will not deduct product inventory or use coupons.</p>
+<div class="warning">Only use this page when the owner has enabled <b>TEST_CHECKOUT_ENABLED=true</b> in Render. Do not share this URL with customers. A successful test still charges ₹10.</div>
+<form id="form">
+<label for="name">Name</label><input id="name" autocomplete="name" maxlength="80" required>
+<label for="phone">10-digit mobile number</label><input id="phone" inputmode="numeric" autocomplete="tel" pattern="[0-9]{10}" maxlength="10" required>
+<label for="email">Email (optional)</label><input id="email" type="email" autocomplete="email" maxlength="120">
+<button id="pay" type="submit">Continue to ₹10 Cashfree checkout</button>
+<div id="msg" role="status" aria-live="polite"></div>
+</form>
+<a class="back" href="/">Back to Rudraksha Farm</a>
+</main>
+<script>
+const form=document.getElementById('form'),pay=document.getElementById('pay'),msg=document.getElementById('msg');
+form.addEventListener('submit',async e=>{
+ e.preventDefault();pay.disabled=true;msg.textContent='Creating a fixed ₹10 test order…';
+ try{
+  const r=await fetch('/api/test-checkout/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:{name:document.getElementById('name').value.trim(),phone:document.getElementById('phone').value.trim(),email:document.getElementById('email').value.trim()}})});
+  const data=await r.json();
+  if(!r.ok)throw new Error(data.error||'Test checkout is unavailable.');
+  if(data.total!==10||!data.paymentSessionId)throw new Error('The server did not return the expected fixed ₹10 payment session.');
+  if(!window.Cashfree){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://sdk.cashfree.com/js/v3/cashfree.js';s.onload=resolve;s.onerror=()=>reject(new Error('Could not load Cashfree checkout.'));document.head.appendChild(s)})}
+  const cf=Cashfree({mode:data.environment==='production'?'production':'sandbox'});
+  const result=await cf.checkout({paymentSessionId:data.paymentSessionId,redirectTarget:'_self'});
+  if(result&&result.error)throw new Error(result.error.message||'Cashfree checkout did not open.');
+ }catch(err){msg.textContent=err.message||'Unable to start test checkout.';pay.disabled=false}
+});
+</script></body></html>
