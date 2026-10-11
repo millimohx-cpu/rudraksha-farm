@@ -1,0 +1,22 @@
+name: Webhook Fix Syntax Check
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [fix/webhook-paid-order-error-handling]
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check JavaScript syntax
+        run: node --check server.js && node --check cashfree-webhook.js && node --check test/cashfree-webhook.test.js
+      - name: Run isolated webhook tests
+        run: npm test
