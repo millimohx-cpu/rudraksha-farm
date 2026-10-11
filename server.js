@@ -544,7 +544,16 @@ async function api(req,res){
       const paymentStatus=event?.data?.payment?.payment_status||event?.data?.payment_status;
       if(orderIdValue){
         if(paymentStatus==='SUCCESS'){
-          try{await markOrderPaid(orderIdValue);}catch(e){console.error('Inventory deduction after webhook failed:',e.message);}
+          try{
+            const marked=await markOrderPaid(orderIdValue);
+            if(!marked){
+              console.error('Webhook success references unknown order:',orderIdValue);
+              return json(res,500,{error:'Order not found'});
+            }
+          }catch(e){
+            console.error('Inventory deduction after webhook failed:',e.message);
+            return json(res,500,{error:'Order confirmation failed'});
+          }
         }
         else if(paymentStatus==='PENDING')await pool.query("UPDATE orders SET payment_status='pending' WHERE id=$1",[orderIdValue]);
         else if(paymentStatus==='FAILED')await pool.query("UPDATE orders SET payment_status='failed' WHERE id=$1",[orderIdValue]);
