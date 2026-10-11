@@ -566,14 +566,16 @@ body{background:var(--rf-cream)}
 @keyframes rf-top-marquee{from{transform:translateX(-100%)}to{transform:translateX(100vw)}}
 @media(prefers-reduced-motion:reduce){.top-marquee{animation:none;padding-left:0;margin:auto}}
 </style>
-<style>.processgrid>.processphoto{display:block!important;height:auto;max-height:700px;aspect-ratio:2/3;overflow:hidden}.processgrid>.processphoto img{display:block;width:100%;height:100%;object-fit:contain}.processgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}@media(max-width:600px){.processgrid{grid-template-columns:1fr!important}.processgrid>.processphoto{display:block!important;width:100%;height:auto;max-height:none;aspect-ratio:auto}.processgrid>.processphoto img{height:auto;object-fit:contain}}
+<style>
+.processgrid>.processphoto{display:block!important;height:auto;max-height:700px;aspect-ratio:2/3;overflow:hidden}.processgrid>.processphoto img{display:block;width:100%;height:100%;object-fit:contain}.processgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}@media(max-width:600px){.processgrid{grid-template-columns:1fr!important}.processgrid>.processphoto{display:block!important;width:100%;height:auto;max-height:none;aspect-ratio:auto}.processgrid>.processphoto img{height:auto;object-fit:contain}}
 /* Bilona section image restored with the new process collage */
 .processgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;align-items:center!important;gap:clamp(28px,5vw,72px)!important}
 .processgrid>.processphoto{display:block!important;width:100%;height:auto!important;max-height:none!important;aspect-ratio:2/3;overflow:hidden;position:relative}
 .processgrid>.processphoto img{display:block!important;width:100%;height:100%;object-fit:cover;object-position:center}
 @media(max-width:600px){.processgrid{grid-template-columns:1fr!important}.processgrid>.processphoto{width:100%;aspect-ratio:2/3;height:auto!important;max-height:none!important}}
-</style>
-<style>
+
+
+
 
 /* Bilona layout final override — valid head stylesheet */
 @media(max-width:1200px){
@@ -599,8 +601,9 @@ body{background:var(--rf-cream)}
  .processcopy .step h4{font-size:clamp(10px,2.8vw,13px)!important}
  .processcopy .step p{font-size:8px!important;line-height:1.35!important}
 }
-</style>
-<style>
+
+
+
 
 /* Bilona 5-step and 5-panel collage: exact matching heights */
 @media(max-width:1200px){
@@ -626,8 +629,9 @@ body{background:var(--rf-cream)}
  .processcopy .step h4{font-size:clamp(10px,2.8vw,13px)!important}
  .processcopy .step p{font-size:8px!important;line-height:1.35!important}
 }
-</style>
-<style>
+
+
+
 
 /* Final Bilona layout: distinctive compact heading; collage matches steps 01–05 only */
 .processcopy .overline{color:var(--gold);font-size:10px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:14px}
@@ -655,8 +659,9 @@ body{background:var(--rf-cream)}
  .processcopy .step h4{font-size:clamp(10px,2.8vw,13px)!important}
  .processcopy .step p{font-size:8px!important;line-height:1.35!important}
 }
-</style>
-<style>
+
+
+
 
 
 /* Bilona reference layout — five method rows align with five image panels */
@@ -690,6 +695,7 @@ body{background:var(--rf-cream)}
  .processcopy .step h4{font-size:clamp(10px,2.8vw,13px)!important;line-height:1.08!important}
  .processcopy .step p{font-size:8px!important;line-height:1.4!important}
 }
+
 </style>
 
 <style>
