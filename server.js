@@ -357,7 +357,7 @@ async function api(req,res){
       const a=Buffer.from(hash,'hex'),bhash=Buffer.from(r.rows[0].password_hash,'hex');
       if(a.length!==bhash.length||!crypto.timingSafeEqual(a,bhash))return json(res,401,{error:'Invalid mobile number or password'});
       await pool.query('UPDATE customers SET last_login_at=NOW() WHERE phone=$1',[phone]);
-      const t=token();await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[t,phone]);
+      const t=token();await pool.query('INSERT INTO customer_sessions(token,phone,expires_at) VALUES($1,$2,NOW()+INTERVAL \'30 days\')',[sessionHash(t),phone]);
       return json(res,200,{token:t,phone:'+91'+phone});
     }
     if(req.method==='POST'&&p==='/api/customer/forgot-password'){
