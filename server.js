@@ -521,7 +521,7 @@ async function api(req,res){
       const o=await dbOrder(id);
       if(!o)return json(res,404,{error:'Order not found'});
       if(o.order_access_token!==accessToken)return json(res,403,{error:'Invalid order access token'});
-      res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}`,'Cache-Control':'no-store'});
+      res.writeHead(302,{Location:`/order.html?order_id=${encodeURIComponent(id)}&access_token=${encodeURIComponent(accessToken)}`,'Cache-Control':'no-store'});
       res.end();
       // Do not block the customer redirect on Cashfree's verification API.
       // Webhook remains the primary confirmation path; the order-status page
@@ -539,8 +539,8 @@ async function api(req,res){
       return;
     }
     if(req.method==='GET'&&p.startsWith('/api/payments/cashfree/status/')){
-      const id=p.split('/').pop(),o=await dbOrder(id);
-      if(!o)return json(res,404,{error:'Order not found'});
+      const id=p.split('/').pop(),accessToken=u.searchParams.get('access_token'),o=await dbOrder(id);
+      if(!o||!accessToken||o.order_access_token!==accessToken)return json(res,404,{error:'Order not found'});
       try{
         const payments=await cashfreeFetch(`/orders/${encodeURIComponent(o.cashfree_order_id||id)}/payments`,{method:'GET'});
         const success=Array.isArray(payments)&&payments.some(x=>x.payment_status==='SUCCESS');
