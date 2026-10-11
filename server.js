@@ -1,5 +1,6 @@
 const http=require('http'),fs=require('fs'),path=require('path'),crypto=require('crypto');
 const {Pool}=require('pg');
+const {handleCashfreeWebhookEvent}=require('./cashfree-webhook');
 
 const envFile=path.join(__dirname,'.env');
 if(fs.existsSync(envFile)){
@@ -540,34 +541,21 @@ async function api(req,res){
       const sig=req.headers['x-webhook-signature'],ts=req.headers['x-webhook-timestamp'];
       if(!verifyWebhook(raw,sig,ts))return json(res,401,{error:'Invalid webhook signature'});
       let event;try{event=JSON.parse(raw)}catch{return json(res,400,{error:'Invalid JSON'})}
-      const cashfreeOrderId=event?.data?.order?.order_id||event?.data?.order_id||event?.order_id;
-      const paymentStatus=event?.data?.payment?.payment_status||event?.data?.payment_status;
-      if(cashfreeOrderId){
-        const localOrder=await pool.query(
-          'SELECT id FROM orders WHERE id=$1 OR cashfree_order_id=$1 ORDER BY CASE WHEN id=$1 THEN 0 ELSE 1 END LIMIT 1',
-          [cashfreeOrderId]
-        );
-        if(!localOrder.rowCount){
-          console.error('Cashfree webhook references unknown order:',cashfreeOrderId);
-          return json(res,500,{error:'Order not found'});
-        }
-        const localOrderId=localOrder.rows[0].id;
-        if(paymentStatus==='SUCCESS'){
-          try{
-            const marked=await markOrderPaid(localOrderId);
-            if(!marked){
-              console.error('Webhook success references unknown local order:',cashfreeOrderId);
-              return json(res,500,{error:'Order not found'});
-            }
-          }catch(e){
-            console.error('Order confirmation after webhook failed:',e.message);
-            return json(res,500,{error:'Order confirmation failed'});
-          }
-        }
-        else if(paymentStatus==='PENDING')await pool.query("UPDATE orders SET payment_status='pending' WHERE id=$1",[localOrderId]);
-        else if(paymentStatus==='FAILED')await pool.query("UPDATE orders SET payment_status='failed' WHERE id=$1",[localOrderId]);
-      }
-      return json(res,200,{ok:true});
+      const result=await handleCashfreeWebhookEvent(event,{
+        findLocalOrder:async cashfreeOrderId=>{
+          const found=await pool.query(
+            'SELECT id FROM orders WHERE id=$1 OR cashfree_order_id=$1 ORDER BY CASE WHEN id=$1 THEN 0 ELSE 1 END LIMIT 1',
+            [cashfreeOrderId]
+          );
+          return found.rowCount?found.rows[0].id:null;
+        },
+        markOrderPaid,
+        updatePaymentStatus:async(localOrderId,status)=>{
+          await pool.query('UPDATE orders SET payment_status=$1 WHERE id=$2',[status,localOrderId]);
+        },
+        logger:console
+      });
+      return json(res,result.statusCode,result.body);
     }
     if(req.method==='GET'&&p.startsWith('/api/orders/')){      const id=p.split('/').pop(),accessToken=u.searchParams.get('access_token');
       if(!accessToken)return json(res,401,{error:'Order access token required'});
