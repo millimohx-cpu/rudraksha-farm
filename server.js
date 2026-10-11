@@ -20,7 +20,7 @@ const CASHFREE_APP_ID=process.env.CASHFREE_APP_ID||'';
 const CASHFREE_SECRET_KEY=process.env.CASHFREE_SECRET_KEY||'';
 const CASHFREE_ENV=(process.env.CASHFREE_ENV||'sandbox').toLowerCase();
 const CASHFREE_API_VERSION=process.env.CASHFREE_API_VERSION||'2025-01-01';
-const PUBLIC_BASE_URL=(process.env.PUBLIC_BASE_URL||'').replace(/\/$/,'');
+const PUBLIC_BASE_URL=(process.env.PUBLIC_BASE_URL||'https://rudrakshafarm.in').replace(/\/$/,'');
 const CASHFREE_BASE_URL=CASHFREE_ENV==='production'?'https://api.cashfree.com/pg':'https://sandbox.cashfree.com/pg';
 
 if(!DATABASE_URL)console.warn('DATABASE_URL is not configured');
