@@ -44,16 +44,6 @@ async function initDb(){
       stock INTEGER NULL,
       active BOOLEAN NOT NULL DEFAULT TRUE
     );
-    CREATE TABLE IF NOT EXISTS product_reviews(
-      id BIGSERIAL PRIMARY KEY,
-      product_id TEXT NOT NULL CHECK (product_id IN ('ghee-500','ghee-1000','ghee-2500')),
-      customer_name TEXT NOT NULL,
-      rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
-      review_text VARCHAR(500) NOT NULL,
-      approved BOOLEAN NOT NULL DEFAULT TRUE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE INDEX IF NOT EXISTS idx_product_reviews_product_created ON product_reviews(product_id,approved,created_at DESC);
     CREATE TABLE IF NOT EXISTS orders(
       id TEXT PRIMARY KEY,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -317,23 +307,6 @@ async function api(req,res){
       }
     }
     if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>({id,name,pack,price,stock,available:stock===null||stock>0}))});
-    if(req.method==='GET'&&p==='/api/reviews'){
-      const productId=String(u.searchParams.get('productId')||'');
-      if(!['ghee-500','ghee-1000','ghee-2500'].includes(productId))return json(res,400,{error:'Choose a valid product'});
-      const r=await pool.query('SELECT id,product_id AS "productId",customer_name AS name,rating,review_text AS review,"created_at" AS "createdAt" FROM product_reviews WHERE product_id=$1 AND approved=TRUE ORDER BY created_at DESC LIMIT 100',[productId]);
-      const a=await pool.query('SELECT ROUND(AVG(rating)::numeric,1) AS average,COUNT(*)::int AS count FROM product_reviews WHERE product_id=$1 AND approved=TRUE',[productId]);
-      return json(res,200,{reviews:r.rows,average:Number(a.rows[0].average||0),count:a.rows[0].count});
-    }
-    if(req.method==='POST'&&p==='/api/reviews'){
-      const b=await body(req),productId=String(b.productId||''),name=String(b.name||'').trim(),review=String(b.review||'').trim(),rating=Number(b.rating);
-      const words=review?review.split(/\s+/).filter(Boolean).length:0;
-      if(!['ghee-500','ghee-1000','ghee-2500'].includes(productId))return json(res,400,{error:'Choose a valid product'});
-      if(name.length<2||name.length>60)return json(res,400,{error:'Name must be 2–60 characters'});
-      if(!Number.isInteger(rating)||rating<1||rating>5)return json(res,400,{error:'Select a 1–5 star rating'});
-      if(!review||words>50||review.length>500)return json(res,400,{error:'Review must be 1–50 words'});
-      const r=await pool.query('INSERT INTO product_reviews(product_id,customer_name,rating,review_text) VALUES($1,$2,$3,$4) RETURNING id,product_id AS "productId",customer_name AS name,rating,review_text AS review,created_at AS "createdAt"',[productId,name,rating,review]);
-      return json(res,201,{review:r.rows[0],message:'Thank you for sharing your experience'});
-    }
     if(req.method==='POST'&&p==='/api/customer/register'){
       const b=await body(req),phone=normalizePhone(b.phone),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||'');
       if(!phone||password.length<8)return json(res,400,{error:'Valid mobile number and password of at least 8 characters are required'});
