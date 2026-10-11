@@ -764,6 +764,22 @@ body{background:var(--rf-cream)}
   }
 }
 </style>
+
+<style id="rf-purity-challenge">
+#rf-purity-teaser{position:fixed;right:14px;bottom:18px;z-index:9998;border:1px solid #d7b879;background:#17120e;color:#f8edda;border-radius:999px;padding:12px 16px;box-shadow:0 8px 28px #0003;font:600 12px/1.25 inherit;letter-spacing:.035em;cursor:pointer;max-width:calc(100vw - 28px)}
+#rf-purity-teaser strong{color:#e7c27b;font-size:14px}
+#rf-purity-overlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(14,10,7,.72);backdrop-filter:blur(4px)}
+#rf-purity-overlay.rf-open{display:flex}
+#rf-purity-card{position:relative;width:min(100%,440px);max-height:calc(100dvh - 36px);overflow:auto;background:#fbf5e9;color:#241a11;border:1px solid #d8bc82;border-radius:18px;padding:30px 24px 24px;text-align:center;box-shadow:0 22px 70px #0005}
+#rf-purity-close{position:absolute;top:10px;right:12px;border:0;background:transparent;color:#34271a;font-size:27px;line-height:1;cursor:pointer;padding:5px}
+#rf-purity-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7b5a2c;font-weight:700}
+#rf-purity-card h2{font-size:clamp(24px,6vw,34px);line-height:1.12;margin:12px 0;color:#21170f}
+#rf-purity-prize{font-size:clamp(38px,10vw,54px);font-weight:800;line-height:1.1;color:#9b6b20;margin:14px 0}
+#rf-purity-card p{font-size:14px;line-height:1.65;margin:10px 0}
+#rf-purity-note{font-size:11px!important;color:#6f6253}
+#rf-purity-contact{display:inline-block;margin-top:10px;padding:12px 20px;background:#21170f;color:#fff4df;border-radius:999px;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.06em}
+@media(max-width:480px){#rf-purity-teaser{right:10px;bottom:12px;padding:10px 13px;font-size:11px}#rf-purity-card{padding:28px 19px 22px}}
+</style>
 </head>
 <body>
 <div class="top">RUDRAKSHA FARM · THE SOUL OF TRADITION</div>
@@ -1174,5 +1190,35 @@ const gallery500Images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJ
 
 handleDirectBuy();syncCatalog().then(()=>{handleProductCart();handleCashfreeReturn();});
  </script>
+
+<div id="rf-purity-challenge">
+  <button id="rf-purity-teaser" type="button" aria-haspopup="dialog" aria-controls="rf-purity-overlay"><strong>₹21,000</strong> Purity Challenge · Tap to know more</button>
+  <div id="rf-purity-overlay" role="presentation" aria-hidden="true">
+    <section id="rf-purity-card" role="dialog" aria-modal="true" aria-labelledby="rf-purity-heading" aria-describedby="rf-purity-description">
+      <button id="rf-purity-close" type="button" aria-label="Close popup">×</button>
+      <div id="rf-purity-eyebrow">Rudraksha Farm · Quality Commitment</div>
+      <h2 id="rf-purity-heading">Believe Our Ghee Isn’t Authentic?</h2>
+      <div id="rf-purity-prize">Win ₹21,000</div>
+      <p id="rf-purity-description">If you can prove that Rudraksha Farm ghee is adulterated or not authentic with a valid report from an independent, accredited laboratory, you could receive <strong>₹21,000 in prize money</strong>, subject to verification.</p>
+      <p id="rf-purity-note">Laboratory evidence, claim verification and eligibility terms apply. Please contact Rudraksha Farm before sending any product or samples.</p>
+      <a id="rf-purity-contact" href="mailto:care@rudrakshafarm.in?subject=₹21%2C000%20Purity%20Challenge">ENQUIRE ABOUT THE CHALLENGE</a>
+    </section>
+  </div>
+</div>
+<script id="rf-purity-challenge-script">
+(function(){
+  const teaser=document.getElementById("rf-purity-teaser");
+  const overlay=document.getElementById("rf-purity-overlay");
+  const close=document.getElementById("rf-purity-close");
+  if(!teaser||!overlay||!close)return;
+  function openPopup(){overlay.classList.add("rf-open");overlay.setAttribute("aria-hidden","false");close.focus();}
+  function closePopup(){overlay.classList.remove("rf-open");overlay.setAttribute("aria-hidden","true");teaser.focus();}
+  teaser.addEventListener("click",openPopup);
+  close.addEventListener("click",closePopup);
+  overlay.addEventListener("click",function(e){if(e.target===overlay)closePopup();});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&overlay.classList.contains("rf-open"))closePopup();});
+})();
+</script>
+
 </body>
 </html>
