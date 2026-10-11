@@ -326,7 +326,7 @@ async function api(req,res){
     }
     if(req.method==='POST'&&p==='/api/reviews'){
       const b=await body(req),productId=String(b.productId||''),name=String(b.name||'').trim(),review=String(b.review||'').trim(),rating=Number(b.rating);
-      const words=review?review.split(/\\s+/).filter(Boolean).length:0;
+      const words=review?review.split(/\s+/).filter(Boolean).length:0;
       if(!['ghee-500','ghee-1000','ghee-2500'].includes(productId))return json(res,400,{error:'Choose a valid product'});
       if(name.length<2||name.length>60)return json(res,400,{error:'Name must be 2–60 characters'});
       if(!Number.isInteger(rating)||rating<1||rating>5)return json(res,400,{error:'Select a 1–5 star rating'});
