@@ -363,7 +363,7 @@ async function api(req,res){
     }
     if(req.method==='POST'&&p==='/api/customer/forgot-password'){
       const b=await body(req),email=String(b.email||'').trim().toLowerCase();
-      if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return json(res,400,{error:'Enter the email address linked to your account.'});
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(res,400,{error:'Enter the email address linked to your account.'});
       const apiKey=process.env.RESEND_API_KEY||'',from=process.env.RESET_FROM_EMAIL||'';
       if(!apiKey||!from)return json(res,503,{error:'Password reset email is not configured yet. Please contact support on WhatsApp.'});
       const r=await pool.query('SELECT phone,email FROM customers WHERE LOWER(email)=LOWER($1) LIMIT 1',[email]);
