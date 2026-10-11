@@ -16,5 +16,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Check server.js syntax
-        run: node --check server.js
+      - name: Check JavaScript syntax
+        run: node --check server.js && node --check cashfree-webhook.js && node --check test/cashfree-webhook.test.js
+      - name: Run isolated webhook tests
+        run: npm test
