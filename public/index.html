@@ -559,6 +559,12 @@ body{background:var(--rf-cream)}
   margin-right:auto!important;
 }
 
+
+/* Moving brand strip */
+.top{overflow:hidden;justify-content:flex-start;background:#173a2b;color:#e7d7b7;white-space:nowrap}
+.top-marquee{display:inline-block;flex:0 0 auto;padding-left:100%;animation:rf-top-marquee 22s linear infinite;will-change:transform}
+@keyframes rf-top-marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@media(prefers-reduced-motion:reduce){.top-marquee{animation:none;padding-left:0;margin:auto}}
 </style>
 <style>.processgrid>.processphoto{display:block!important;height:auto;max-height:700px;aspect-ratio:2/3;overflow:hidden}.processgrid>.processphoto img{display:block;width:100%;height:100%;object-fit:contain}.processgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}@media(max-width:600px){.processgrid{grid-template-columns:1fr!important}.processgrid>.processphoto{display:block!important;width:100%;height:auto;max-height:none;aspect-ratio:auto}.processgrid>.processphoto img{height:auto;object-fit:contain}}
 /* Bilona section image restored with the new process collage */
@@ -783,7 +789,7 @@ body{background:var(--rf-cream)}
 </style>
 </head>
 <body>
-<div class="top">RUDRAKSHA FARM · THE SOUL OF TRADITION</div>
+<div class="top" aria-label="Rudraksha Farm, Barmer, Rajasthan, The Soul of Tradition"><span class="top-marquee">🇮🇳 RUDRAKSHA FARM · BARMER, RAJASTHAN · THE SOUL OF TRADITION</span></div>
 <header class="nav">
  <div class="container navin">
   <button class="menu-btn" type="button" aria-label="Open menu" onclick="openMenu()"><svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6.5h18M3 12h18M3 17.5h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
