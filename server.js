@@ -495,6 +495,26 @@ async function api(req,res){
         return json(res,201,{orderId:id,accessToken,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:o.total,customerToken});
       }catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}
     }
+    if(req.method==='POST'&&p==='/api/test-checkout/order'){
+      if(String(process.env.TEST_CHECKOUT_ENABLED||'').toLowerCase()!=='true')return json(res,404,{error:'Not found'});
+      const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();
+      if(!allowPaymentCreate(ip))return json(res,429,{error:'Too many payment attempts. Please wait a minute and try again.'});
+      const b=await body(req);
+      const name=String(b.customer?.name||'').trim().slice(0,80);
+      const phone=normalizePhone(b.customer?.phone);
+      const email=String(b.customer?.email||'').trim().slice(0,120);
+      if(!name||!phone)return json(res,400,{error:'Name and a valid 10 digit mobile number are required'});
+      if(CASHFREE_ENV!=='production'&&CASHFREE_ENV!=='sandbox')return json(res,503,{error:'Cashfree environment is not configured'});
+      const id='RFT-'+orderId(),accessToken=token();
+      const payload={order_id:id,order_amount:10,order_currency:'INR',customer_details:{customer_id:'rf_test_'+crypto.randomBytes(6).toString('hex'),customer_name:name,customer_phone:phone,customer_email:email||'test@example.com'},order_meta:{return_url:`${PUBLIC_BASE_URL||'http://localhost:'+PORT}/cashfree-return?order_id={order_id}&access_token=${accessToken}`}};
+      if(PUBLIC_BASE_URL)payload.order_meta.notify_url=`${PUBLIC_BASE_URL}/api/payments/cashfree/webhook`;
+      try{
+        const cf=await cashfreeFetch('/orders',{method:'POST',body:JSON.stringify(payload)});
+        const o={id,createdAt:new Date().toISOString(),customer:{name,phone,email:email||null,address:'Payment verification test — no shipment'},items:[],subtotal:10,shipping:0,discount:0,couponCode:null,total:10,paymentStatus:'pending',status:'test_payment_pending',cashfreeOrderId:cf.order_id||id,cashfreeEnvironment:CASHFREE_ENV,paymentSessionId:cf.payment_session_id||null,orderAccessToken:accessToken};
+        await saveOrder(o);
+        return json(res,201,{orderId:id,paymentSessionId:cf.payment_session_id,environment:CASHFREE_ENV,total:10});
+      }catch(e){return json(res,e.status||502,{error:e.message,details:e.details||undefined})}
+    }
     if(req.method==='GET'&&p==='/cashfree-return'){
       const id=u.searchParams.get('order_id'),accessToken=u.searchParams.get('access_token');
       if(!id||!accessToken)return json(res,400,{error:'Missing order access token'});
