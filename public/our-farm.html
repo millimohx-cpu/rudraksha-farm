@@ -20,6 +20,24 @@
 .quote{font:500 43px/.98 "Cormorant Garamond",serif;color:var(--green);margin:30px 0}.dark .quote{color:var(--gold2)}
 .footer{background:#0d0906;color:#bdaf9e;padding:55px 0 25px}.footline{display:flex;justify-content:space-between;gap:20px;font-size:11px;line-height:1.8}.footline b{color:#fff;font:500 26px "Cormorant Garamond",serif}
 @media(max-width:800px){.brand.brand-wordmark .brand-name{font-size:clamp(13px,3.8vw,17px);letter-spacing:.06em}.brand.brand-wordmark .brand-tagline{font-size:clamp(8px,2.3vw,10px);letter-spacing:.03em;margin-top:4px}.navlinks{display:none}.navin{grid-template-columns:1fr auto 1fr}.grid{grid-template-columns:1fr;gap:45px}.farmcopy{left:7%;right:7%}.farmhero,.farmhero img{min-height:0;height:auto}.farmhero img{display:block;width:100%;height:auto;aspect-ratio:auto;object-fit:contain;margin:0;padding:0}.farmhero h1{font-size:78px}.section{padding:82px 0}.photo{height:450px}.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery .g,.gallery .g.small,.gallery .video-frame{height:280px}.footline{display:block}}
+
+/* Our Farm — Rooted in Marwar section */
+.farm-story{padding:clamp(68px,9vw,118px) 0;background:var(--cream)}
+.farm-story-layout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:clamp(34px,7vw,96px);align-items:center}
+.farm-story-heading{position:relative;padding:clamp(24px,4vw,48px) 0}
+.farm-story .overline{color:#98743a;letter-spacing:.22em;line-height:1.7}
+.farm-story .bigtitle{color:var(--green);font-size:clamp(58px,7.2vw,96px);line-height:.88;letter-spacing:-.025em;margin:22px 0 26px}
+.farm-story-quote{display:flex;align-items:center;gap:10px;color:#76552d;font:italic 500 clamp(23px,2.6vw,32px)/1.2 "Cormorant Garamond",serif}
+.farm-story-quote .quote-mark{font:500 58px/.65 "Cormorant Garamond",serif;color:var(--gold);align-self:flex-start}
+.farm-story-rule{height:1px;width:min(230px,75%);background:linear-gradient(90deg,var(--gold),rgba(182,138,59,0));margin:30px 0 18px}
+.farm-story-signoff{font-size:9px;letter-spacing:.16em;color:#82735e;font-weight:600}
+.farm-story-signoff span{color:var(--gold);padding:0 5px}
+.farm-story-copy{border-left:1px solid #dfd1b8;padding-left:clamp(24px,4vw,52px)}
+.farm-story-copy .lead{font-size:clamp(25px,3vw,34px);line-height:1.25;color:#4c3824;margin:0 0 22px;max-width:500px}
+.farm-story-copy .body{font-size:14px;line-height:1.95;color:#746858;margin:0 0 16px;max-width:560px}
+.farm-story-note{display:flex;align-items:center;gap:12px;margin-top:28px;color:var(--green);font:italic 500 19px/1.35 "Cormorant Garamond",serif}
+.farm-story-note-line{height:28px;width:3px;flex:0 0 3px;background:var(--gold)}
+@media(max-width:760px){.farm-story{padding:58px 0 64px}.farm-story-layout{grid-template-columns:1fr;gap:28px}.farm-story-heading{padding:0}.farm-story .overline{font-size:9px;letter-spacing:.18em}.farm-story .bigtitle{font-size:clamp(58px,16vw,82px);margin:18px 0 22px}.farm-story-quote{font-size:27px}.farm-story-rule{margin:24px 0 14px}.farm-story-copy{border-left:0;border-top:1px solid #dfd1b8;padding:25px 0 0}.farm-story-copy .lead{font-size:28px;margin-bottom:16px}.farm-story-copy .body{font-size:13px;line-height:1.85}.farm-story-note{font-size:18px;margin-top:22px}}
 </style>
 </head>
 <body>
@@ -33,9 +51,20 @@
 <img src="our-farm-hero.jpg.png" alt="Rudraksha Farm at sunset with cows and family">
 
 </section>
-<section class="section cream"><div class="container grid">
-<div><div class="overline">The Farm</div><h2 class="bigtitle">Rooted in<br>Marwar.</h2><div class="quote">“Purity is a process.”</div></div>
-<div><p class="lead">Rudraksha Farm began with a simple intention: make ghee we would be proud to serve at home.</p><p class="body">Our farm is in Barmer, Rajasthan. The focus is not simply on selling more; it is on maintaining a traditional chain of work from cow and milk to curd, makkhan and finally ghee.</p><p class="body">The farm story is deliberately simple: take care at every stage, keep the process visible, and let the product speak for itself.</p></div>
+<section class="section cream farm-story"><div class="container farm-story-layout">
+  <div class="farm-story-heading">
+    <div class="overline">The Farm · Barmer, Rajasthan</div>
+    <h2 class="bigtitle">Rooted in<br>Marwar.</h2>
+    <div class="farm-story-quote"><span class="quote-mark">“</span><span>Purity is a process.</span></div>
+    <div class="farm-story-rule" aria-hidden="true"></div>
+    <p class="farm-story-signoff">RUDRAKSHA FARM <span>·</span> THE SOUL OF TRADITION</p>
+  </div>
+  <div class="farm-story-copy">
+    <p class="lead">Good ghee begins long before it reaches the jar.</p>
+    <p class="body">Our farm is in Barmer, Rajasthan, where we follow a traditional journey from cow’s milk to curd, makkhan and finally ghee.</p>
+    <p class="body">Our intention is simple: care at every stage, respect for the process, and a product we are proud to serve at home.</p>
+    <div class="farm-story-note"><span class="farm-story-note-line"></span><span>From our farm to your home — with tradition at heart.</span></div>
+  </div>
 </div></section>
 <section class="section light" id="journey"><div class="container">
 <div class="overline">Farm to Jar</div><h2 class="bigtitle">A traditional<br>journey.</h2>
