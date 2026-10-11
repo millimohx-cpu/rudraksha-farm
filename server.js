@@ -442,7 +442,7 @@ async function api(req,res){
       if(b.email!==ADMIN_EMAIL||b.password!==ADMIN_PASSWORD)return json(res,401,{error:'Invalid credentials'});
       const t=token();
       await pool.query('DELETE FROM sessions WHERE expires_at<=NOW()');
-      await pool.query('INSERT INTO sessions(token,expires_at) VALUES($1,NOW()+INTERVAL \'8 hours\')',[t]);
+      await pool.query('INSERT INTO sessions(token,expires_at) VALUES($1,NOW()+INTERVAL \'8 hours\')',[sessionHash(t)]);
       return json(res,200,{token:t});
     }
     if(req.method==='POST'&&p==='/api/orders'){
