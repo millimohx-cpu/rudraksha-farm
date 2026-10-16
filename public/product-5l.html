@@ -39,6 +39,7 @@
 .review-empty{font:13px/1.6 Arial,sans-serif;color:#756b5b;background:#fffdf8;border:1px dashed #d9ccb4;border-radius:10px;padding:18px}
 @media(max-width:700px){.customer-reviews{margin:24px auto 40px;padding:0 16px}.review-layout{grid-template-columns:1fr;gap:18px}.review-panel{padding:18px 14px}.review-form{padding:14px}}
 </style>
+<style id="rf-price-discount-styles">.sale-price{display:flex;align-items:baseline;flex-wrap:wrap;gap:9px}.sale-price del,.packs del{font-size:.55em;color:#84796a;font-weight:500}.sale-price strong{font-size:1em;color:inherit}.discount-badge{display:inline-block;background:#173a2b;color:#fff;padding:5px 8px;border-radius:5px;font-size:12px;font-weight:700;letter-spacing:.02em}.packs small{font-weight:700}</style>
 </head>
 <body>
 <div class="top">🇮🇳 RUDRAKSHA FARM · BARMER, RAJASTHAN · THE SOUL OF TRADITION</div>
@@ -65,11 +66,11 @@
       <div class="eyebrow">RUDRAKSHA FARM · 5 L</div>
       <h1 class="title">A2 Bilona Desi Cow Ghee</h1>
       <div class="rating"><span class="stars">★★★★★</span><span>Traditional Bilona process</span></div>
-      <div class="price">₹10,000</div>
+      <div class="price sale-price"><del>₹17,999</del> <strong>₹9,999</strong> <span class="discount-badge">44% OFF</span></div>
       <div class="tax">MRP (Incl. of all taxes)</div>
 
       <div class="pack-title">Choose Pack</div>
-      <div class="packs"><div class="pack active">5 L (4590 g)<br><small>₹10,000</small></div></div>
+      <div class="packs"><div class="pack active">5 L (4590 g)<br><del>₹17,999</del><br><small>₹9,999 · 44% OFF</small></div></div>
 
       <div class="qtyrow"><div class="qty"><button onclick="changeQty(-1)">−</button><span id="qty">1</span><button onclick="changeQty(1)">+</button></div><a class="cta" href="index.html?add=ghee-2500&qty=1#shop" onclick="return addToCart(event)">Add to cart</a></div>
       <a class="buy" href="index.html?buy=ghee-2500&qty=1#shop" onclick="return buyNow(event)">Buy Now</a>
@@ -94,7 +95,7 @@
 const images=["https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/99ef9150-6b8b-4cdd-b2de-000a76270f6f.jpg","https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/91e80c16-616d-4857-8a3c-4734f9c80dfd.png"];
 function setImage(i){document.getElementById("mainImage").src=images[i];document.querySelectorAll(".thumb").forEach((b,n)=>b.classList.toggle("active",n===i))}
 let qty=1;function changeQty(d){qty=Math.max(1,Math.min(99,qty+d));document.getElementById("qty").textContent=qty}
-function addToCart(e){if(e)e.preventDefault();const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-2500");if(x)x.qty+=qty;else cart.push({productId:"ghee-2500",name:"5 L A2 Bilona Ghee",price:10000,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));location.href="index.html?cart=1#shop";return false}
+function addToCart(e){if(e)e.preventDefault();const cart=JSON.parse(localStorage.getItem("rf_product_cart")||"[]");const x=cart.find(i=>i.productId==="ghee-2500");if(x)x.qty+=qty;else cart.push({productId:"ghee-2500",name:"5 L A2 Bilona Ghee",price:9999,img:images[0],qty});localStorage.setItem("rf_product_cart",JSON.stringify(cart));location.href="index.html?cart=1#shop";return false}
 function buyNow(e){if(e)e.preventDefault();location.href="index.html?buy=ghee-2500&qty="+qty+"#shop";return false}
 </script>
 <script id="product-reviews-script">
