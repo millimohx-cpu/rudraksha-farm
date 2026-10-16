@@ -32,7 +32,6 @@
 {"@type":"ListItem","position":3,"item":{"@type":"Product","name":"A2 Bilona Desi Cow Ghee — 5 L (4590 g)","image":"https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/91e80c16-616d-4857-8a3c-4734f9c80dfd.png","description":"A2 Bilona Desi Cow Ghee, hand-churned using the traditional Bilona method from Gir cow milk at Rudraksha Farm, Barmer, Rajasthan.","brand":{"@type":"Brand","name":"Rudraksha Farm"},"offers":{"@type":"Offer","url":"https://rudrakshafarm.in/","priceCurrency":"INR","price":"10000","itemCondition":"https://schema.org/NewCondition","shippingDetails":{"@type":"OfferShippingDetails","hasShippingService":{"@id":"https://rudrakshafarm.in/#shipping-service"}},"hasMerchantReturnPolicy":{"@id":"https://rudrakshafarm.in/#return-policy"}}}}
 ]}
 </script>
-<link rel="preload" as="image" href="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/2ec251bc-477f-4a8e-9b43-db27de23f7f0.jpg" fetchpriority="high" type="image/jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -900,6 +899,53 @@ body{background:var(--rf-cream)}
  .rf-navratri-trust span+span{border-left:1px solid rgba(157,108,39,.24)}
 }
 
+
+/* FINAL HERO FIX — retain latest Navratri copy; remove older overlapping hero artwork */
+.rf-navratri-hero{
+  display:block!important;
+  min-height:0!important;
+  height:auto!important;
+  margin-top:116px!important;
+  padding:clamp(52px,7vw,88px) clamp(20px,7vw,100px) 0!important;
+  grid-template-columns:1fr!important;
+  gap:0!important;
+  background:#f8f0df!important;
+  background-image:none!important;
+  overflow:visible!important;
+}
+.rf-navratri-hero:before{display:none!important}
+.rf-navratri-copy{max-width:760px!important;margin:0 auto 42px!important;text-align:center!important}
+.rf-navratri-kicker{justify-content:center!important}
+.rf-navratri-hero h1{font-size:clamp(48px,7vw,88px)!important;line-height:.9!important;margin:18px 0!important}
+.rf-navratri-copy>p{max-width:560px!important;margin:18px auto 24px!important}
+.rf-navratri-note{margin-top:18px!important}
+.rf-navratri-products{display:none!important}
+.rf-navratri-trust{
+  position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;
+  display:flex!important;width:calc(100% + clamp(40px,14vw,200px))!important;
+  margin:0 calc(-1 * clamp(20px,7vw,100px))!important;
+  min-height:66px!important;flex-wrap:wrap!important;
+  background:#fffaf1!important;
+}
+@media(max-width:900px){
+  .rf-navratri-hero{margin-top:64px!important;padding:44px 20px 0!important;background:#f8f0df!important;background-image:none!important}
+  .rf-navratri-copy{margin:0 auto 28px!important}
+  .rf-navratri-hero h1{font-size:clamp(46px,9vw,68px)!important}
+  .rf-navratri-trust{width:calc(100% + 40px)!important;margin:0 -20px!important;gap:6px!important}
+}
+@media(max-width:600px){
+  .rf-navratri-hero{margin-top:64px!important;padding:36px 16px 0!important}
+  .rf-navratri-copy{margin-bottom:24px!important}
+  .rf-navratri-kicker{font-size:9px!important;letter-spacing:.13em!important}
+  .rf-navratri-hero h1{font-size:clamp(42px,11.5vw,58px)!important;line-height:.9!important}
+  .rf-navratri-copy>p{font-size:20px!important;line-height:1.15!important;margin:14px auto 18px!important}
+  .rf-navratri-cta{min-height:48px!important}
+  .rf-navratri-note{font-size:8px!important;letter-spacing:.1em!important}
+  .rf-navratri-trust{min-height:56px!important;padding:10px 5px!important;font-size:9px!important;flex-wrap:nowrap!important}
+  .rf-navratri-trust span{flex:1;white-space:normal!important;text-align:center;line-height:1.15}
+  .rf-navratri-trust span:last-child{display:flex!important}
+}
+
 </style>
 </head>
 <body>
@@ -953,11 +999,6 @@ body{background:var(--rf-cream)}
     <p>A2 Bilona Desi Cow Ghee, made with the traditional Bilona method.</p>
     <a class="rf-navratri-cta" href="#shop">SHOP GHEE <span aria-hidden="true">→</span></a>
     <div class="rf-navratri-note">The Soul of Tradition · Barmer, Rajasthan</div>
-  </div>
-  <div class="rf-navratri-products" aria-label="Rudraksha Farm ghee product sizes">
-    <div class="rf-navratri-product rf-navratri-small"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/1fe6b7b6-1b8e-4a4b-aacb-b0936579753e.png" alt="Rudraksha Farm A2 Bilona ghee jar, 500 ml" fetchpriority="high"><span>500 ML</span></div>
-    <div class="rf-navratri-product rf-navratri-medium"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/81cc2079-cb83-42f5-b706-0e656c6368ef.png" alt="Rudraksha Farm A2 Bilona ghee jar, 1 litre"><span>1 LITRE</span></div>
-    <div class="rf-navratri-product rf-navratri-large"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_37FHg7cyUosJcbJJtCkCEuzOoMD/91e80c16-616d-4857-8a3c-4734f9c80dfd.png" alt="Rudraksha Farm A2 Bilona ghee can, 5 litres"><span>5 LITRE</span></div>
   </div>
   <div class="rf-navratri-trust"><span><b aria-hidden="true">♧</b> Traditional Bilona</span><span><b aria-hidden="true">❧</b> Farm Fresh</span><span><b aria-hidden="true">◇</b> No Adulteration</span><span><b aria-hidden="true">♧</b> Made with Care</span></div>
 </section>
