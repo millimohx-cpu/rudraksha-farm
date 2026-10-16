@@ -903,18 +903,27 @@ body{background:var(--rf-cream)}
 </style>
 
 <style id="rf-remove-hero-images">
-/* Hero image removal: keep the copy, CTA and trust strip; remove product photos and photographic backdrop. */
+/* Remove every visual image layer from the homepage hero while preserving its text, CTA and trust strip. */
 .rf-navratri-hero{
   grid-template-columns:minmax(0,1fr)!important;
   justify-items:center!important;
-  background-color:#fff5e2!important;
-  background-image:linear-gradient(135deg,#fffaf1 0%,#f6e8cf 58%,#ead4ae 100%)!important;
+  background:#fff5e2!important;
+  background-image:none!important;
 }
-.rf-navratri-hero:before{
-  opacity:.12!important;
-}
-.rf-navratri-products{
+.rf-navratri-hero::before,
+.rf-navratri-hero::after{
+  content:none!important;
   display:none!important;
+  background-image:none!important;
+}
+.rf-navratri-hero img,
+.rf-navratri-hero picture,
+.rf-navratri-hero video,
+.rf-navratri-hero canvas,
+.rf-navratri-hero .rf-navratri-products,
+.rf-navratri-hero [style*="background-image"]{
+  display:none!important;
+  background-image:none!important;
 }
 .rf-navratri-copy{
   width:min(100%,800px)!important;
@@ -928,7 +937,8 @@ body{background:var(--rf-cream)}
 @media(max-width:900px){
   .rf-navratri-hero{
     grid-template-columns:minmax(0,1fr)!important;
-    background-image:linear-gradient(160deg,#fffaf1 0%,#f0dfc0 100%)!important;
+    background:#fff5e2!important;
+    background-image:none!important;
   }
   .rf-navratri-copy{text-align:center!important}
   .rf-navratri-kicker{justify-content:center!important}
