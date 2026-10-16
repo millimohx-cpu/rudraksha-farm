@@ -148,13 +148,13 @@ async function initDb(){
       [
         'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',1149,null,true,
         'ghee-1000','A2 Bilona Desi Cow Ghee','1 kg',2199,null,true,
-        'ghee-2500','A2 Bilona Desi Cow Ghee','5 L (4590 g)',10000,null,true
+        'ghee-2500','A2 Bilona Desi Cow Ghee','5 L (4590 g)',9999,null,true
       ]
     );
   }
   await pool.query("UPDATE products SET price=1149 WHERE id='ghee-500'");
   await pool.query("UPDATE products SET price=2199 WHERE id='ghee-1000'");
-  await pool.query("UPDATE products SET pack='5 L (4590 g)',price=10000 WHERE id='ghee-2500'");
+  await pool.query("UPDATE products SET pack='5 L (4590 g)',price=9999 WHERE id='ghee-2500'");
 }
 async function recordOrderNotification(orderId,event){
   await pool.query('INSERT INTO order_notifications(order_id,event) SELECT $1,$2 WHERE NOT EXISTS (SELECT 1 FROM order_notifications WHERE order_id=$1 AND event=$2)',[orderId,event]);
@@ -317,7 +317,7 @@ async function api(req,res){
         return json(res,503,{ok:false,service:'rudraksha-farm',database:false,time:new Date().toISOString()});
       }
     }
-    if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>({id,name,pack,price,stock,available:stock===null||stock>0}))});
+    if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>{const offer={'ghee-500':{originalPrice:1749,discountPercent:34},'ghee-1000':{originalPrice:3499,discountPercent:37},'ghee-2500':{originalPrice:17999,discountPercent:44}}[id]||{};return {id,name,pack,price,stock,...offer,available:stock===null||stock>0}})});
     if(req.method==='GET'&&p==='/api/reviews'){
       const productId=String(u.searchParams.get('productId')||'');
       if(!['ghee-500','ghee-1000','ghee-2500'].includes(productId))return json(res,400,{error:'Choose a valid product'});
