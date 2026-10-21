@@ -770,7 +770,10 @@ const server=http.createServer(async(req,res)=>{
   res.setHeader('Permissions-Policy','camera=(),microphone=(),geolocation=()');
   res.setHeader('Cross-Origin-Opener-Policy','same-origin-allow-popups');
   if(req.headers['x-forwarded-proto']==='https')res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
-  if(req.url.startsWith('/api/')){const r=await api(req,res);if(r===null)json(res,404,{error:'API route not found'})}
+  const requestPath=req.url.split('?')[0];
+  // Cashfree redirects customers to this non-/api route after checkout.
+  // Route it through the API handler so order/token validation and redirect run.
+  if(requestPath.startsWith('/api/')||requestPath==='/cashfree-return'){const r=await api(req,res);if(r===null)json(res,404,{error:'API route not found'})}
   else serve(req,res);
 });
 async function start(){
