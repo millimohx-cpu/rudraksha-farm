@@ -4,11 +4,11 @@
       "id": "ghee-500",
       "name": "A2 Bilona Desi Cow Ghee",
       "pack": "500 ml",
-      "price": 10,
+      "price": 999,
       "stock": null,
       "active": true,
       "originalPrice": 1749,
-      "discountPercent": 99
+      "discountPercent": 43
     },
     {
       "id": "ghee-1000",
