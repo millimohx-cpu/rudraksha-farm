@@ -146,13 +146,13 @@ async function initDb(){
     await pool.query(
       'INSERT INTO products(id,name,pack,price,stock,active) VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12),($13,$14,$15,$16,$17,$18)',
       [
-        'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',1149,null,true,
+        'ghee-500','A2 Bilona Desi Cow Ghee','500 ml',10,null,true,
         'ghee-1000','A2 Bilona Desi Cow Ghee','1 kg',2199,null,true,
         'ghee-2500','A2 Bilona Desi Cow Ghee','5 L (4590 g)',9999,null,true
       ]
     );
   }
-  await pool.query("UPDATE products SET price=1149 WHERE id='ghee-500'");
+  await pool.query("UPDATE products SET price=10 WHERE id='ghee-500'");
   await pool.query("UPDATE products SET price=2199 WHERE id='ghee-1000'");
   await pool.query("UPDATE products SET pack='5 L (4590 g)',price=9999 WHERE id='ghee-2500'");
 }
@@ -317,7 +317,7 @@ async function api(req,res){
         return json(res,503,{ok:false,service:'rudraksha-farm',database:false,time:new Date().toISOString()});
       }
     }
-    if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>{const offer={'ghee-500':{originalPrice:1749,discountPercent:34},'ghee-1000':{originalPrice:3499,discountPercent:37},'ghee-2500':{originalPrice:17999,discountPercent:44}}[id]||{};return {id,name,pack,price,stock,...offer,available:stock===null||stock>0}})});
+    if(req.method==='GET'&&p==='/api/products')return json(res,200,{products:(await dbProducts(true)).map(({id,name,pack,price,stock})=>{const offer={'ghee-500':{originalPrice:1749,discountPercent:99},'ghee-1000':{originalPrice:3499,discountPercent:37},'ghee-2500':{originalPrice:17999,discountPercent:44}}[id]||{};return {id,name,pack,price,stock,...offer,available:stock===null||stock>0}})});
     if(req.method==='GET'&&p==='/api/reviews'){
       const productId=String(u.searchParams.get('productId')||'');
       if(!['ghee-500','ghee-1000','ghee-2500'].includes(productId))return json(res,400,{error:'Choose a valid product'});
