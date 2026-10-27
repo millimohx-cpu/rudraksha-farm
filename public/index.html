@@ -1052,6 +1052,48 @@ body{background:var(--rf-cream)}
 }
 </style>
 
+
+<style id="rf-sticky-brand-center">
+/* Keep the company wordmark in the white sticky bar, centered between the navigation groups. */
+header.nav{
+  background:rgba(255,250,241,.99)!important;
+  color:#173a2b!important;
+  border-bottom:1px solid rgba(91,59,34,.18)!important;
+  box-shadow:0 3px 14px rgba(23,18,14,.07);
+  backdrop-filter:blur(12px);
+}
+header.nav .navin{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+  align-items:center!important;
+}
+header.nav .navlinks a{color:#173a2b!important}
+header.nav .brand.brand-wordmark{
+  grid-column:2!important;
+  justify-self:center!important;
+  align-items:center!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+header.nav .brand.brand-wordmark span{
+  color:#173a2b!important;
+  font-family:"Cormorant Garamond",Georgia,serif!important;
+  font-weight:700!important;
+  letter-spacing:.075em!important;
+}
+header.nav .brand.brand-wordmark small{
+  color:#8a6427!important;
+  letter-spacing:.12em!important;
+}
+@media(max-width:600px){
+  header.nav .navin{grid-template-columns:36px minmax(0,1fr) 36px!important}
+  header.nav .brand.brand-wordmark{grid-column:2!important;max-width:100%!important}
+  header.nav .brand.brand-wordmark span{font-size:14px!important;letter-spacing:.035em!important}
+  header.nav .brand.brand-wordmark small{font-size:6px!important}
+  header.nav .navlinks{display:none!important}
+}
+</style>
+
 </head>
 <body>
 <div class="top" aria-label="Rudraksha Farm, Barmer, Rajasthan, The Soul of Tradition"><span class="top-marquee">🇮🇳 RUDRAKSHA FARM · BARMER, RAJASTHAN · THE SOUL OF TRADITION</span></div>
