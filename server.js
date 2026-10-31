@@ -94,6 +94,12 @@ async function initDb(){
     CREATE INDEX IF NOT EXISTS idx_customer_password_resets_expiry ON customer_password_resets(expires_at);
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code TEXT;
     ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(10,2) NOT NULL DEFAULT 0;
+    -- Percentage coupons can produce paise values (for example ₹1649.25).
+    -- Keep order monetary columns decimal-safe instead of truncating/rejecting them.
+    ALTER TABLE orders
+      ALTER COLUMN subtotal TYPE NUMERIC(12,2) USING subtotal::NUMERIC(12,2),
+      ALTER COLUMN shipping TYPE NUMERIC(12,2) USING shipping::NUMERIC(12,2),
+      ALTER COLUMN total TYPE NUMERIC(12,2) USING total::NUMERIC(12,2);
     CREATE TABLE IF NOT EXISTS admin_audit_logs(
       id BIGSERIAL PRIMARY KEY,
       admin_action TEXT NOT NULL,
