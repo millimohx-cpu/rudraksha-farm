@@ -116,6 +116,27 @@ async function loadCoupons(){
     $("couponList").innerHTML=coupons.length?coupons.map(c=>"<div class='card' style='margin:8px 0;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center'><div><b>"+esc(c.code)+"</b><div class='muted'>"+(c.type==="percent"?Number(c.value)+"%":"₹"+money(c.value).replace("₹",""))+" off · Min ₹"+Number(c.min_subtotal||0)+" · Used "+Number(c.used_count||0)+(c.max_uses==null?"":"/"+Number(c.max_uses))+"</div></div><label><input type='checkbox' "+(c.active?"checked":"")+" onchange='toggleCoupon("+JSON.stringify(String(c.id))+",this.checked)'> Active</label></div>").join(""):"No coupons created yet.";
   }catch(e){$("couponList").textContent="Could not load coupons: "+e.message;}
 }
+async function createCoupon(){
+  const code=$("couponCodeAdmin").value.trim().toUpperCase();
+  const type=$("couponType").value;
+  const value=Number($("couponValue").value);
+  const minText=$("couponMin").value.trim();
+  const maxText=$("couponMax").value.trim();
+  if(!code){alert("Enter a coupon code.");$("couponCodeAdmin").focus();return;}
+  if(!Number.isFinite(value)||value<=0){alert("Enter a discount value greater than 0.");$("couponValue").focus();return;}
+  if(type==="percent"&&value>100){alert("Percent discount cannot exceed 100.");$("couponValue").focus();return;}
+  if(minText!==""&&(!Number.isFinite(Number(minText))||Number(minText)<0)){alert("Enter a valid minimum subtotal.");$("couponMin").focus();return;}
+  if(maxText!==""&&(!Number.isInteger(Number(maxText))||Number(maxText)<1)){alert("Enter a valid maximum-use count.");$("couponMax").focus();return;}
+  const button=document.querySelector('button[onclick="createCoupon()"]');
+  if(button){button.disabled=true;button.textContent="Saving...";}
+  try{
+    await api("/api/admin/coupons",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,type,value,minSubtotal:minText===""?0:Number(minText),maxUses:maxText===""?null:Number(maxText),active:true})});
+    $("couponCodeAdmin").value="";$("couponValue").value="";$("couponMin").value="";$("couponMax").value="";
+    await loadCoupons();
+    alert("Coupon "+code+" created and activated.");
+  }catch(err){alert("Coupon was not saved: "+err.message);}
+  finally{if(button){button.disabled=false;button.textContent="Create Coupon";}}
+}
 async function toggleCoupon(id,active){
   try{await api("/api/admin/coupons/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({active})});await loadCoupons();}
   catch(e){alert(e.message);await loadCoupons();}
